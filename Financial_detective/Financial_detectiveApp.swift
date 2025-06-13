@@ -11,7 +11,7 @@ import SwiftUI
 struct Financial_detectiveApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ServicesTestView()
         }
     }
 }
