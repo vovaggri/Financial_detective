@@ -30,7 +30,7 @@ struct ServicesTestView: View {
             print("Categories:", categories)
             
             guard let firstCategory = categories.first else {
-                print("Нет ни одной категори")
+                print("There is no catagories")
                 return
             }
             
@@ -46,7 +46,7 @@ struct ServicesTestView: View {
             
             let amountString = "123.45"
                 guard let amount = Decimal(string: amountString) else {
-                    print("Не удалось создать Decimal из \(amountString)")
+                    print("Conver from Decimal to \(amountString) impossible")
                     return
                 }
             

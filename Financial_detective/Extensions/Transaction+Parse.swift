@@ -3,6 +3,7 @@ import Foundation
 extension Transaction {
     static func parse(jsonObject: Any) -> Transaction? {
         // Parse Transaction
+        let formatter = ISO8601DateFormatter.withFractionalSeconds
         guard
             let dict = jsonObject as? [String: Any],
     
@@ -12,9 +13,9 @@ extension Transaction {
             let transactionDateString = dict["transactionDate"] as? String,
             let createdAtString = dict["createdAt"] as? String,
             let updatedAtString = dict["updatedAt"] as? String,
-            let transactionDate = ISO8601DateFormatter().date(from: transactionDateString),
-            let createdAt = ISO8601DateFormatter().date(from: createdAtString),
-            let updatedAt = ISO8601DateFormatter().date(from: updatedAtString)
+            let transactionDate = formatter.date(from: transactionDateString),
+            let createdAt = formatter.date(from: createdAtString),
+            let updatedAt = formatter.date(from: updatedAtString)
         else {
             return nil
         }
@@ -24,19 +25,15 @@ extension Transaction {
         guard
             let accDict = dict["account"] as? [String: Any],
             let accId = accDict["id"] as? Int,
-            let userId = accDict["userId"] as? Int,
+//            let userId = accDict["userId"] as? Int,
             let accName = accDict["name"] as? String,
             let accBalanceString = accDict["balance"] as? String,
             let accBalance = Decimal(string: accBalanceString),
-            let accCurrency = accDict["currency"] as? String,
-            let accCreatedAtString = accDict["createdAt"] as? String,
-            let accUpdatedAtString = accDict["updatedAt"] as? String,
-            let accCreatedAt = ISO8601DateFormatter().date(from: accCreatedAtString),
-            let accUpdatedAt = ISO8601DateFormatter().date(from: accUpdatedAtString)
+            let accCurrency = accDict["currency"] as? String
         else {
             return nil
         }
-        let account = BankAccount (id: accId, userId: userId, name: accName, balance: accBalance, currency: accCurrency, createdAt: accCreatedAt, updatedAt: accUpdatedAt)
+        let account = BankAccount (id: accId, userId: 0, name: accName, balance: accBalance, currency: accCurrency, createdAt: createdAt, updatedAt: updatedAt)
         
         // Parse Category
         guard
@@ -44,7 +41,7 @@ extension Transaction {
             let catId = catDict["id"] as? Int,
             let catName = catDict["name"] as? String,
             let catEmojiString = catDict["emoji"] as? String,
-            catEmojiString.count == 1,
+            !catEmojiString.isEmpty,
             let catEmojiChar = catEmojiString.first,
             let isIncome = catDict["isIncome"] as? Bool
         else {
@@ -57,7 +54,7 @@ extension Transaction {
     }
     
     var jsonObject: Any {
-        let formatter = ISO8601DateFormatter()
+        let formatter = ISO8601DateFormatter.withFractionalSeconds
         
         let accountDict: [String: Any] = [
             "id": account.id,
@@ -78,8 +75,8 @@ extension Transaction {
         
         return [
             "id": id,
-            "accountId": accountDict,
-            "categoryId": categoryDict,
+            "account": accountDict,
+            "category": categoryDict,
             "amount": String(describing: amount),
             "transactionDate": formatter.string(from: transactionDate),
             "comment": comment as Any,
