@@ -68,4 +68,12 @@ final class TransactionsFileCache {
     func remove(id: Int) {
         transactions.removeAll { $0.id == id }
     }
+    
+    /// Полностью сбросить кеш на диск
+    func reset() throws {
+        // очистить память
+        self.transactions.removeAll()
+        // перезаписать файл нулевым массивом
+        try save()
+    }
 }
