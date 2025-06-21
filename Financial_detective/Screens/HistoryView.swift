@@ -101,7 +101,18 @@ struct HistoryView: View {
             }
         }
         
-        .onChange(of: vm.startDate) { _ in vm.loadHistory() }
-        .onChange(of: vm.endDate)   { _ in vm.loadHistory() }
+        .onChange(of: vm.startDate) { newStart in
+            if newStart > vm.endDate {
+                vm.endDate = newStart
+            }
+            vm.loadHistory()
+        }
+        .onChange(of: vm.endDate) { newEnd in
+            if newEnd < vm.startDate {
+                vm.startDate = newEnd
+            }
+            vm.loadHistory()
+        }
+        .background(Color(.systemGray6).ignoresSafeArea())
     }
 }
