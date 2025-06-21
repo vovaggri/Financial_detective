@@ -7,7 +7,7 @@ enum TransactionServiceError: Error {
 final class TransactionsService {
     private let cache: TransactionsFileCache
     
-    init(cache: TransactionsFileCache) async throws {
+    init(cache: TransactionsFileCache) throws {
         self.cache = cache
         try cache.load()
     }

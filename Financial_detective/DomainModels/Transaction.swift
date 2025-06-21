@@ -1,6 +1,10 @@
 import Foundation
 
-struct Transaction {
+struct Transaction: Identifiable, Equatable {
+    static func == (lhs: Transaction, rhs: Transaction) -> Bool {
+        lhs.id == rhs.id
+    }
+    
     let id: Int
     var account: BankAccount
     var category: Category
