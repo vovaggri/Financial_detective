@@ -27,6 +27,7 @@ struct Financial_detectiveApp: App {
 
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
+        UIView.appearance(whenContainedInInstancesOf: [UIAlertController.self]).tintColor = UIColor(Color( red: 0x6F/255, green: 0x5D/255, blue: 0xB7/255))
     }
 
 
