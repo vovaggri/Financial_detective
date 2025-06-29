@@ -99,6 +99,9 @@ struct AccountView: View {
                 
             }
             .listStyle(.plain)
+            .refreshable {
+                await vm.refresh()
+            }
             .navigationTitle("Мой счет")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {

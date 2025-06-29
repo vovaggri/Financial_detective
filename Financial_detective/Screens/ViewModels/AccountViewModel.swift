@@ -26,6 +26,11 @@ final class AccountViewModel: ObservableObject {
     }
     
     @MainActor
+    func refresh() async {
+        await loadAccount()
+    }
+    
+    @MainActor
     func saveChanges() async {
         guard let guardAccount = account else { return }
         do {
