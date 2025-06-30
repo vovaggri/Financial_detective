@@ -9,19 +9,20 @@ let allCurrencyOptions: [CurrencyOption] = [
 struct AccountView: View {
     @StateObject private var vm = AccountViewModel()
     @FocusState private var amountFieldFocused: Bool
+    @State private var textBalance: String = ""
     @State private var isShakeEnabled = true
-
+    
     private let currencyDict: [String: CurrencyOption] = {
         Dictionary(uniqueKeysWithValues:
-            allCurrencyOptions.map { ($0.code, $0) }
+                    allCurrencyOptions.map { ($0.code, $0) }
         )
     }()
-
+    
     private func option(for code: String) -> CurrencyOption {
         currencyDict[code]
-            ?? CurrencyOption(code: code, name: code, symbol: "")
+        ?? CurrencyOption(code: code, name: code, symbol: "")
     }
-
+    
     var body: some View {
         ZStack {
             // MARK: — ShakeDetector на весь экран
@@ -31,7 +32,7 @@ struct AccountView: View {
             }
             .ignoresSafeArea()
             .allowsHitTesting(false)
-
+            
             // MARK: — Основной NavigationView + Form
             NavigationView {
                 Form {
@@ -41,19 +42,25 @@ struct AccountView: View {
                             HStack {
                                 Text("💰   Баланс")
                                 Spacer()
-
+                                
                                 if vm.isEditing {
-                                    TextField(
-                                        "Сумма",
-                                        value: Binding(
-                                            get: { account.balance },
-                                            set: { vm.account?.balance = $0 }
-                                        ),
-                                        format: .number.precision(.fractionLength(0...2))
-                                    ).foregroundColor(.secondary)
-                                    .keyboardType(.decimalPad)
-                                    .focused($amountFieldFocused)
-                                    .multilineTextAlignment(.trailing)
+                                    TextField("Сумма", text: $textBalance)
+                                      .keyboardType(.decimalPad)
+                                      .focused($amountFieldFocused)
+                                      .multilineTextAlignment(.trailing)
+                                      .onChange(of: textBalance) { new in
+                                        let sep = Locale.current.decimalSeparator ?? ","
+                                        let allowed = CharacterSet.decimalDigits.union(CharacterSet(charactersIn: sep))
+                                        let filtered = String(new.unicodeScalars.filter { allowed.contains($0) })
+                                        if filtered != new {
+                                          textBalance = filtered
+                                        }
+
+                                        let normalized = filtered.replacingOccurrences(of: sep, with: ".")
+                                        if let dec = Decimal(string: normalized) {
+                                          vm.account?.balance = dec
+                                        }
+                                      }
                                 } else {
                                     HStack(spacing: 0) {
                                         Text(
@@ -69,11 +76,11 @@ struct AccountView: View {
                         }
                         .listRowBackground(
                             vm.isEditing
-                                ? Color(.systemBackground)
-                                : Color(red: 42/255, green: 232/255, blue: 129/255)
+                            ? Color(.systemBackground)
+                            : Color(red: 42/255, green: 232/255, blue: 129/255)
                         )
                         .listRowSeparator(.hidden)
-
+                        
                         // Валюта
                         Section(header: EmptyView(), footer: EmptyView()) {
                             HStack {
@@ -97,8 +104,8 @@ struct AccountView: View {
                         }
                         .listRowBackground(
                             vm.isEditing
-                                ? Color(.systemBackground)
-                                : Color(red: 212/255, green: 250/255, blue: 230/255)
+                            ? Color(.systemBackground)
+                            : Color(red: 212/255, green: 250/255, blue: 230/255)
                         )
                         .listRowSeparator(.hidden)
                     } else {
@@ -141,9 +148,9 @@ struct AccountView: View {
     }
 }
 
-//#Preview {
-//    AccountView()
-//}
+#Preview {
+    AccountView()
+}
 
 
 
