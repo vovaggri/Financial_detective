@@ -4,6 +4,7 @@ final class AccountViewModel: ObservableObject {
     @Published var account: BankAccount?
     @Published var isEditing = false
     @Published var showCurrencyPicker = false
+    @Published var isBalanceHidden = false
     
     // Список доступных валют (можно вынести в сервис)
     let currencies = ["RUB", "USD", "EUR"]
@@ -43,6 +44,12 @@ final class AccountViewModel: ObservableObject {
     
     func toogleEdit() {
         isEditing.toggle()
+    }
+    
+    func toggleBalanceHidden() {
+        withAnimation(.spring()) {
+            isBalanceHidden.toggle()
+        }
     }
     
     func selectCurrency(_ new: String) {
