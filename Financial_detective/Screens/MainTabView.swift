@@ -35,15 +35,17 @@ struct MainTabView: View {
                 Text("Доходы")
             }
 
-            NavigationStack {
-                // stub
-                Text("Счет")
-            }
+            AccountView()
             .tabItem {
                 Image("icon_account")
                     .renderingMode(.template)
                 Text("Счет")
             }
+            .accentColor(Color(
+                red: 212/255,
+                green: 250/255,
+                blue: 230/255
+            ))
 
             NavigationStack {
                 Text("Статьи")
