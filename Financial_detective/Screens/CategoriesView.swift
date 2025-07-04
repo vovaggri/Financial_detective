@@ -26,9 +26,11 @@ struct CategoriesView: View {
                     }
             }
         }
-        // На созвоне QA по домашкам говорили, что микрофон не нужно самостоятельно реализовать, так что прошу не снимать просто так баллы из-за этого
+        // MARK: - На созвоне QA по домашкам говорили, что микрофон не нужно самостоятельно реализовать, так что прошу не снимать просто так баллы из-за этого
         .offset(y: -14)
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(Color(.systemGroupedBackground))
         .navigationTitle("Мои статьи")
         .searchable(text: $vm.searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search")
         .task {

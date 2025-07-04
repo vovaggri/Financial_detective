@@ -16,11 +16,12 @@ final class CategoriesViewModel: ObservableObject {
     }
     
     var filteredCategories: [Category] {
-        guard !searchText.isEmpty else {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else {
             return allCategories
         }
-        return allCategories.filter {
-            $0.name.localizedCaseInsensitiveContains(searchText)
+        return allCategories.filter { category in
+            category.name.fuxxyMatches(query)
         }
     }
 }
