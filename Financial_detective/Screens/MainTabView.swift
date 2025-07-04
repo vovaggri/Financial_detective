@@ -48,7 +48,7 @@ struct MainTabView: View {
             ))
 
             NavigationStack {
-                Text("Статьи")
+                CategoriesView()
             }
             .tabItem {
                 Image("icon_categories")

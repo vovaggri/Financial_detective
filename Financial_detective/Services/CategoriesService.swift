@@ -4,7 +4,9 @@ final class CategoriesService {
         Category(id: 2, name: "Кофе", emoji: "☕️", direction: .outcome),
         Category(id: 3, name: "Продукты", emoji: "🛒", direction: .outcome),
         Category(id: 4, name: "Подарки", emoji: "🎁", direction: .outcome),
-        Category(id: 5, name: "Подработка", emoji: "👨‍💻", direction: .income)
+        Category(id: 5, name: "Подработка", emoji: "👨‍💻", direction: .income),
+        Category(id: 6, name: "Аптека", emoji: "💜", direction: .outcome),
+        Category(id: 7, name: "Аренда квартиры", emoji: "🏠", direction: .outcome)
     ]
     
     func categories() async throws -> [Category] {
