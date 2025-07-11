@@ -12,6 +12,14 @@ final class AnalysisViewController: UIViewController {
 
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let tableContainerView = UIView()
+    
+    private let sortControl: UISegmentedControl = {
+        let sc = UISegmentedControl(items: ["Дата", "Сумма"])
+        sc.selectedSegmentIndex = 0
+        sc.translatesAutoresizingMaskIntoConstraints = false
+        return sc
+    }()
+    
     private var tableViewHeightConstraint: NSLayoutConstraint!
 
     // MARK: — VM
@@ -34,6 +42,7 @@ final class AnalysisViewController: UIViewController {
         view.backgroundColor = .systemGray6
 
         configurePickers()
+        sortControl.addTarget(self, action: #selector(didChangeSorting(_:)), for: .valueChanged)
         configureSumLabel()
         setupHeader()
         view.addSubview(transactionsLabel)
@@ -59,7 +68,8 @@ final class AnalysisViewController: UIViewController {
         // строки
         let row1 = labeledRow(title: "Период: начало", view: startPicker)
         let row2 = labeledRow(title: "Период: конец", view: endPicker)
-        let row3 = labeledRow(title: "Сумма", view: sumLabel)
+        let row3 = labeledRow(title: "Сортировка", view: sortControl)
+        let row4 = labeledRow(title: "Сумма", view: sumLabel)
 
         // сепаратор
         func sep() -> UIView {
@@ -76,10 +86,11 @@ final class AnalysisViewController: UIViewController {
         let stack = UIStackView(arrangedSubviews: [
             row1, sep(),
             row2, sep(),
-            row3
+            row3, sep(),
+            row4
         ])
         stack.axis = .vertical
-        stack.spacing = 9   // <-- увеличили расстояние между всеми элементами
+        stack.spacing = 9 
 
         headerContainer.addSubview(stack)
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -309,6 +320,10 @@ final class AnalysisViewController: UIViewController {
 
         // 3) перезагружаем транзакции под новым диапазоном
         viewModel.loadTransactions()
+    }
+    
+    @objc private func didChangeSorting(_ sender: UISegmentedControl) {
+        viewModel.sortOption = sender.selectedSegmentIndex == 0 ? .date : .amount
     }
     
     @objc private func didTapBack() {
