@@ -30,21 +30,6 @@ final class AnalysisViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-//        let backItem = UIBarButtonItem(
-//            title: "Назад",
-//            style: .plain,
-//            target: self,
-//            action: #selector(didTapBack)
-//        )
-//        backItem.tintColor = UIColor(hex: "#6F5DB7") ?? .systemPurple
-//        navigationItem.leftBarButtonItem = backItem
-//        
-//        let appearance = UINavigationBarAppearance()
-//        appearance.configureWithOpaqueBackground()
-//        appearance.backgroundColor = .systemGray6
-//        navigationController?.navigationBar.standardAppearance = appearance
-//        navigationController?.navigationBar.scrollEdgeAppearance = appearance
         
         view.backgroundColor = .systemGray6
 
@@ -294,17 +279,36 @@ final class AnalysisViewController: UIViewController {
     // MARK: — Actions
 
     @objc private func didChangeDate(_ sender: UIDatePicker) {
+        let chosen = sender.date
+        var newStart = viewModel.startDate
+        var newEnd   = viewModel.endDate
+
         if sender === startPicker {
-            viewModel.startDate = sender.date
-            if sender.date > endPicker.date {
-                endPicker.date = sender.date
+            // Пользователь поменял начало → 00:00 выбранного дня
+            newStart = chosen.atStartOfDay
+            // ★ если начало стало позже конца — подтягиваем конец
+            if newStart > viewModel.endDate {
+                newEnd = chosen.atEndOfDay
             }
         } else {
-            viewModel.endDate = sender.date
-            if sender.date < startPicker.date {
-                startPicker.date = sender.date
+            // Пользователь поменял конец → 23:59:59 выбранного дня
+            newEnd = chosen.atEndOfDay
+            // ★ если конец стал раньше начала — подтягиваем начало
+            if newEnd < viewModel.startDate {
+                newStart = chosen.atStartOfDay
             }
         }
+
+        // 1) обновляем модель
+        viewModel.startDate = newStart
+        viewModel.endDate   = newEnd
+
+        // 2) обновляем UI обоих пикеров (дата + время, но UI рисует только дату)
+        startPicker.setDate(newStart, animated: true)
+        endPicker.setDate(newEnd, animated: true)
+
+        // 3) перезагружаем транзакции под новым диапазоном
+        viewModel.loadTransactions()
     }
     
     @objc private func didTapBack() {
