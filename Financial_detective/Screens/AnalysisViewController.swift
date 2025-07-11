@@ -8,8 +8,11 @@ final class AnalysisViewController: UIViewController {
     private let startPicker = UIDatePicker()
     private let endPicker = UIDatePicker()
     private let sumLabel = UILabel()
+    private let transactionsLabel = UILabel()
 
     private let tableView = UITableView(frame: .zero, style: .plain)
+    private let tableContainerView = UIView()
+    private var tableViewHeightConstraint: NSLayoutConstraint!
 
     // MARK: — VM
 
@@ -27,30 +30,36 @@ final class AnalysisViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Анализ"
 
-        let backItem = UIBarButtonItem(
-            title: "Назад",
-            style: .plain,
-            target: self,
-            action: #selector(didTapBack)
-        )
-        backItem.tintColor = UIColor(hex: "#6F5DB7") ?? .systemPurple
-        navigationItem.leftBarButtonItem = backItem
-        
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = .systemGray6
-        navigationController?.navigationBar.standardAppearance = appearance
-        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+//        let backItem = UIBarButtonItem(
+//            title: "Назад",
+//            style: .plain,
+//            target: self,
+//            action: #selector(didTapBack)
+//        )
+//        backItem.tintColor = UIColor(hex: "#6F5DB7") ?? .systemPurple
+//        navigationItem.leftBarButtonItem = backItem
+//        
+//        let appearance = UINavigationBarAppearance()
+//        appearance.configureWithOpaqueBackground()
+//        appearance.backgroundColor = .systemGray6
+//        navigationController?.navigationBar.standardAppearance = appearance
+//        navigationController?.navigationBar.scrollEdgeAppearance = appearance
         
         view.backgroundColor = .systemGray6
 
         configurePickers()
         configureSumLabel()
         setupHeader()
+        view.addSubview(transactionsLabel)
+        configureTransactionsLabel()
         setupTableView()
         bindViewModel()
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        tableViewHeightConstraint.constant = tableView.contentSize.height
     }
 
     // MARK: — Setup Header
@@ -58,6 +67,7 @@ final class AnalysisViewController: UIViewController {
     private func setupHeader() {
         headerContainer.backgroundColor = .systemBackground
         headerContainer.layer.cornerRadius = 12
+        headerContainer.layer.masksToBounds = true
         view.addSubview(headerContainer)
         headerContainer.translatesAutoresizingMaskIntoConstraints = false
 
@@ -137,62 +147,146 @@ final class AnalysisViewController: UIViewController {
     }
 
     private func configurePickers() {
-        [startPicker, endPicker].forEach {
-            $0.datePickerMode = .date
-            $0.preferredDatePickerStyle = .compact
-            $0.addTarget(self, action: #selector(didChangeDate(_:)), for: .valueChanged)
-            // даём им фиксированную ширину и включаем interaction
-            $0.widthAnchor.constraint(equalToConstant: 138).isActive = true
-            $0.heightAnchor.constraint(equalToConstant: 34).isActive = true
-            $0.isUserInteractionEnabled = true
+        let green = UIColor(hex: "D4FAE6")
+        
+        [startPicker, endPicker].forEach { picker in
+            picker.datePickerMode = .date
+            picker.preferredDatePickerStyle = .compact
+            picker.addTarget(self, action: #selector(didChangeDate(_:)), for: .valueChanged)
+            
+            // Фиксированный размер
+            picker.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                picker.widthAnchor.constraint(equalToConstant: 138),
+                picker.heightAnchor.constraint(equalToConstant: 34)
+            ])
+            
+            // Прозрачный фон для всего пикера
+            picker.backgroundColor = .clear
+            
+            // Находим и стилизуем реальную кнопку
+            if let button = findButton(in: picker) {
+                button.backgroundColor = green
+                button.layer.cornerRadius = 8
+                button.clipsToBounds = true
+                
+                button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
+            }
         }
+        
         startPicker.date = viewModel.startDate
         endPicker.date   = viewModel.endDate
+    }
+    
+    private func findButton(in view: UIView) -> UIButton? {
+        if let button = view as? UIButton {
+            return button
+        }
+        for subview in view.subviews {
+            if let button = findButton(in: subview) {
+                return button
+            }
+        }
+        return nil
     }
 
     private func configureSumLabel() {
         sumLabel.font = .systemFont(ofSize: 17)
         sumLabel.textAlignment = .right
-        // сразу прописываем начальную сумму
+        
+        // Считаем общую сумму
         let total = viewModel.transactions.map(\.amount).reduce(0, +)
-        sumLabel.text = total.formatted(
-            .currency(code: viewModel.transactions.first?.account.currency ?? "RUB")
-        )
+        
+        // Целая часть
+        let intPart = NSDecimalNumber(decimal: total).intValue
+        // Дробная часть (копейки/центы)
+        let fracDecimal = (total - Decimal(intPart)) * 100
+        let fracPart = NSDecimalNumber(decimal: fracDecimal).intValue
+        
+        // Формируем строку: либо "350", либо "123,45"
+        let amountString: String
+        if fracPart == 0 {
+            amountString = "\(intPart)"
+        } else {
+            amountString = "\(intPart),\(String(format: "%02d", fracPart))"
+        }
+        
+        // Подставляем символ валюты по коду (расширьте switch при необходимости)
+        let currencyCode = viewModel.transactions.first?.account.currency ?? "RUB"
+        let currencySymbol: String = {
+            switch currencyCode {
+            case "RUB": return "₽"
+            case "USD": return "$"
+            case "EUR": return "€"
+            default:    return currencyCode
+            }
+        }()
+        
+        // И финальный текст
+        sumLabel.text = "\(amountString) \(currencySymbol)"
+    }
+    
+    private func configureTransactionsLabel() {
+        transactionsLabel.text = "ОПЕРАЦИИ"
+        transactionsLabel.font = .systemFont(ofSize: 13)
+        transactionsLabel.textColor = .secondaryLabel
+        
+        transactionsLabel.pinTop(to: headerContainer.bottomAnchor, 16)
+        transactionsLabel.pinLeft(to: headerContainer.leadingAnchor)
     }
 
     // MARK: — Setup Table
-
+    
     private func setupTableView() {
         tableView.dataSource = self
         tableView.register(TransactionCell.self, forCellReuseIdentifier: "TxCell")
         tableView.translatesAutoresizingMaskIntoConstraints = false
-
-        view.addSubview(tableView)
+        
+        // 1. Отключаем скролл
+        tableView.isScrollEnabled = false
+        
+        // 2. Контейнер с круглыми углами
+        tableContainerView.backgroundColor = .systemBackground
+        tableContainerView.layer.cornerRadius = 12
+        tableContainerView.layer.masksToBounds = true
+        tableContainerView.translatesAutoresizingMaskIntoConstraints = false
+        
+        view.addSubview(tableContainerView)
+        tableContainerView.addSubview(tableView)
+        
+        // 3. Создаём и активируем высотную констрейнт для таблицы
+        tableViewHeightConstraint = tableView.heightAnchor.constraint(equalToConstant: 0)
+        tableViewHeightConstraint.isActive = true
+        
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(
-                equalTo: headerContainer.bottomAnchor,
-                constant: 16
-            ),
-            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16),
+            // контейнер растёт вниз от header
+            tableContainerView.topAnchor.constraint(equalTo: transactionsLabel.bottomAnchor, constant: 5),
+            tableContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            tableContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            // не привязываем контейнер к bottom — его высота задаётся содержимым
+            
+            // tableView внутри контейнера по всем сторонам
+            tableView.topAnchor.constraint(equalTo: tableContainerView.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: tableContainerView.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: tableContainerView.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: tableContainerView.bottomAnchor),
         ])
-        tableView.backgroundColor = .clear
+        
         tableView.separatorInset = .init(top: 0, left: 16, bottom: 0, right: 16)
     }
-
+    
     // MARK: — Bind VM
 
     private func bindViewModel() {
         viewModel.onTransactionChange = { [weak self] _ in
             self?.tableView.reloadData()
         }
-        viewModel.onTotalAmountChange = { [weak self] total in
-            guard let self = self else { return }
-            self.sumLabel.text = total.formatted(
-                .currency(code: self.viewModel.transactions.first?.account.currency ?? "RUB")
-            )
+        
+        viewModel.onTotalAmountChange = { [weak self] _ in
+            // вместо ‥.formatted(…) используем ваше ручное
+            self?.configureSumLabel()
         }
+        
         viewModel.onError = { print("Ошибка:", $0) }
         viewModel.loadTransactions()
     }
@@ -232,7 +326,7 @@ extension AnalysisViewController: UITableViewDataSource {
             withIdentifier: "TxCell",
             for: indexPath
         ) as! TransactionCell
-        cell.configure(with: tx)
+        cell.configure(with: tx, viewModel.transactions.map(\.amount).reduce(0, +))
         return cell
     }
 }
