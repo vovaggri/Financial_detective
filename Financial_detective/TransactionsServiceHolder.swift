@@ -21,9 +21,9 @@ final class TransactionsServiceHolder: ObservableObject {
             updatedAt: now
         )
 
-        let cat1 = Category(id: 1, name: "Кафе", emoji: "☕", direction: .outcome)
-        let cat2 = Category(id: 2, name: "Обед", emoji: "🍔", direction: .outcome)
-        let cat3 = Category(id: 3, name: "Зарплата", emoji: "💰", direction: .income)
+        let cat1 = Category(id: 2, name: "Кофе", emoji: "☕", direction: .outcome)
+        let cat2 = Category(id: 8, name: "Обед", emoji: "🍔", direction: .outcome)
+        let cat3 = Category(id: 1, name: "Зарплата", emoji: "💰", direction: .income)
 
         let txA = Transaction(
             id: 0,

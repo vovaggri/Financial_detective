@@ -6,9 +6,9 @@ final class AnalysisViewModel {
         case amount
     }
     
-    private let service: TransactionsService
-    private let accountId: Int
-    private let direction: Direction
+    public let service: TransactionsService
+    public let accountId: Int
+    public let direction: Direction
     
     var onTransactionChange: (([Transaction]) -> Void)?
     var onTotalAmountChange: ((Decimal) -> Void)?

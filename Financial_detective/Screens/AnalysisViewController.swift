@@ -24,7 +24,7 @@ final class AnalysisViewController: UIViewController {
 
     // MARK: — VM
 
-    private let viewModel: AnalysisViewModel
+    public let viewModel: AnalysisViewModel
 
     // MARK: — Init
 
@@ -50,6 +50,11 @@ final class AnalysisViewController: UIViewController {
         setupTableView()
         bindViewModel()
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        viewModel.loadTransactions()
+      }
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
@@ -235,6 +240,7 @@ final class AnalysisViewController: UIViewController {
     
     private func setupTableView() {
         tableView.dataSource = self
+        tableView.delegate = self
         tableView.register(TransactionCell.self, forCellReuseIdentifier: "TxCell")
         tableView.translatesAutoresizingMaskIntoConstraints = false
         

@@ -1,0 +1,142 @@
+import SwiftUI
+
+struct TransactionFormView: View {    
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var viewModel: TransactionFormViewModel
+    
+    init(transaction: Transaction? = nil,
+         direction: Direction,
+         accountId: Int,
+         transactionsService: TransactionsService,
+         categoriesService: CategoriesService,
+         bankAccountsService: BankAccountsService
+    ) {
+        _viewModel = StateObject(
+            wrappedValue: TransactionFormViewModel(
+                transaction: transaction,
+                direction: direction,
+                accountId: accountId,
+                transactionsService: transactionsService,
+                categoriesService: categoriesService,
+                bankAccountsService: bankAccountsService
+            )
+        )
+    }
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section {
+                    // Выбор статьи с chevron
+                    Picker("Статья", selection: $viewModel.selectedCategoryId) {
+                        ForEach(viewModel.categories) { cat in
+                            Text("\(cat.emoji) \(cat.name)").tag(cat.id)
+                        }
+                    }
+                    .pickerStyle(.navigationLink)
+
+                    // Ввод суммы
+                    HStack {
+                        Text("Сумма")
+                        Spacer()
+                        TextField("Сумма", text: $viewModel.amountString)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                    }
+
+                    // Выбор даты
+                    HStack {
+                        Text("Дата")
+                        Spacer()
+                        DatePicker(
+                            "",
+                            selection: $viewModel.date,
+                            displayedComponents: .date
+                        )
+                        .labelsHidden()
+                        .datePickerStyle(.compact)
+                        .frame(width: 100, height: 23)
+                        .padding(.vertical, 6)
+                        .background(Color(red: 212/255,
+                                          green: 250/255,
+                                          blue: 230/255))
+                        .cornerRadius(8)
+                    }
+
+                    // Выбор времени
+                    HStack {
+                        Text("Время")
+                        Spacer()
+                        DatePicker(
+                            "",
+                            selection: $viewModel.date,
+                            displayedComponents: .hourAndMinute
+                        )
+                        .labelsHidden()
+                        .datePickerStyle(.compact)
+                        .frame(width: 45, height: 23)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 12)
+                        .background(Color(red: 212/255, green: 250/255, blue: 230/255))
+                        .cornerRadius(8)
+                    }
+
+                    // Комментарий
+                    HStack(alignment: .top) {
+                        TextField("Комментарий", text: $viewModel.comment)
+                            .multilineTextAlignment(.leading)
+                    }
+                }
+
+                // Кнопка удаления при редактировании
+                if viewModel.isEditing {
+                    Section {
+                        Button(role: .destructive) {
+                            Task {
+                                try? await viewModel.delete()
+                                dismiss()
+                            }
+                        } label: {
+                            Text(
+                                viewModel.direction == .outcome
+                                ? "Удалить расход"
+                                : "Удалить доход"
+                            )
+                        }
+                    }
+                }
+            }
+            .onTapGesture {
+                hideKeyboard()
+            }
+            .navigationTitle(
+                viewModel.isEditing
+                ? (viewModel.direction == .outcome ? "Мои Расходы" : "Мои Доходы")
+                : (viewModel.direction == .outcome ? "Новый расход" : "Новый доход")
+            )
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Отмена") { dismiss() }
+                        .foregroundStyle(Color(red: 0x6F/255,
+                                                     green: 0x5D/255,
+                                                     blue: 0xB7/255))
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Сохранить") {
+                        Task {
+                            try? await viewModel.save()
+                            dismiss()
+                        }
+                    }
+                    .foregroundStyle(Color(red: 0x6F/255,
+                                                 green: 0x5D/255,
+                                                 blue: 0xB7/255))
+                    .disabled(!viewModel.canSave)
+                }
+            }
+            .task { await viewModel.loadData() }
+        }
+    }
+}
+
