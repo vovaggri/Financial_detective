@@ -4,6 +4,8 @@ struct TransactionFormView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: TransactionFormViewModel
     
+    private let decimalSeparator = Locale.current.decimalSeparator ?? "."
+    
     init(transaction: Transaction? = nil,
          direction: Direction,
          accountId: Int,
@@ -42,6 +44,26 @@ struct TransactionFormView: View {
                         TextField("Сумма", text: $viewModel.amountString)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
+                        // Фильтр на ввод: только цифры и один разделитель
+                            .onChange(of: viewModel.amountString) { newValue in
+                                // оставляем только цифры и разделитель
+                                let allowed = CharacterSet.decimalDigits
+                                    .union(CharacterSet(charactersIn: decimalSeparator))
+                                var filtered = newValue.unicodeScalars
+                                    .filter { allowed.contains($0) }
+                                    .map(Character.init)
+                                // не больше одного разделителя
+                                if filtered.filter({ String($0) == decimalSeparator }).count > 1 {
+                                    // удаляем последний введённый
+                                    if let idx = filtered.lastIndex(of: Character(decimalSeparator)) {
+                                        filtered.remove(at: idx)
+                                    }
+                                }
+                                let result = String(filtered)
+                                if result != newValue {
+                                    viewModel.amountString = result
+                                }
+                            }
                     }
 
                     // Выбор даты
@@ -51,6 +73,7 @@ struct TransactionFormView: View {
                         DatePicker(
                             "",
                             selection: $viewModel.date,
+                            in: ...Date(),
                             displayedComponents: .date
                         )
                         .labelsHidden()
