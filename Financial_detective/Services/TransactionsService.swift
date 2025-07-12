@@ -28,14 +28,21 @@ final class TransactionsService {
     func createTransaction(_ transaction: Transaction) async throws -> Transaction {
         let newId = (cache.allTransactions.map { $0.id }.max() ?? 0) + 1
         let now = Date()
-        
-        let newTransaction = Transaction(id: newId, account: transaction.account, category: transaction.category, amount: transaction.amount, transactionDate: transaction.transactionDate, createdAt: now, updatedAt: now)
-        
+        let newTransaction = Transaction(
+            id: newId,
+            account: transaction.account,
+            category: transaction.category,
+            amount: transaction.amount,
+            transactionDate: transaction.transactionDate,
+            comment: transaction.comment,
+            createdAt: now,
+            updatedAt: now
+        )
         cache.add(newTransaction)
         try cache.save()
-        
         return newTransaction
     }
+
     
     func updateTransaction(_ transaction: Transaction) async throws -> Transaction {
         guard let old = cache.allTransactions.first(where: { $0.id == transaction.id }) else {

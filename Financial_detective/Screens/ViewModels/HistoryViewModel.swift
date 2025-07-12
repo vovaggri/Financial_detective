@@ -7,9 +7,9 @@ final class HistoryViewModel: ObservableObject {
     @Published var startDate: Date
     @Published var endDate: Date
 
-    private let direction: Direction
-    private let service: TransactionsService
-    private let accountId: Int
+    let direction: Direction
+    let service: TransactionsService
+    let accountId: Int
 
     init(direction: Direction,
          accountId: Int,

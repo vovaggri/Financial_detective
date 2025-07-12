@@ -2,6 +2,9 @@ import SwiftUI
 
 struct TransactionsListView: View {
     @StateObject var vm: TransactionsListViewModel
+    
+    @State private var showForm = false
+    @State private var editingTx: Transaction?
 
     var body: some View {
         NavigationStack {
@@ -28,7 +31,8 @@ struct TransactionsListView: View {
                 .padding(.horizontal)
 
                 List(vm.transactions) { tx in
-                    NavigationLink {
+                    Button {
+                        editingTx = tx
                     } label: {
                         VStack(alignment: .leading, spacing: 5) {
                         // Верхняя строка: эмоджи + название
@@ -49,12 +53,55 @@ struct TransactionsListView: View {
                     .padding(.vertical, 8)
                     .listRowBackground(Color.white)
                     }
+                    .buttonStyle(.plain)
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
                 .clipShape(
                     RoundedRectangle(cornerRadius: 12)
                 )
+            }
+            .overlay(
+                Button {
+                    showForm = true
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 56))
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(
+                            .white,
+                            Color.accentColor
+                        )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Создать операцию"),
+                alignment: .bottomTrailing
+            )
+            .padding(.bottom, 16)
+            .fullScreenCover(item: $editingTx, onDismiss: {
+                Task { await vm.loadToday() }
+            }) { tx in
+                TransactionFormView(
+                    transaction: tx,
+                    direction: vm.direction,
+                    accountId: vm.accountId,
+                    transactionsService: vm.service,
+                    categoriesService: CategoriesService(),
+                    bankAccountsService: BankAccountsService()
+                )
+                .interactiveDismissDisabled()
+            }
+            .fullScreenCover(isPresented: $showForm, onDismiss: {
+                Task { await vm.loadToday() }
+            }) {
+                TransactionFormView(
+                    direction: vm.direction,
+                    accountId: vm.accountId,
+                    transactionsService: vm.service,
+                    categoriesService: CategoriesService(),
+                    bankAccountsService: BankAccountsService()
+                )
+                .interactiveDismissDisabled()
             }
             .padding(.horizontal)
             .background(Color(.systemGray6))
@@ -86,89 +133,91 @@ struct TransactionsListView: View {
                     }
                 }
             }
-            
-            .task {
-                await vm.loadToday()
+            .listStyle(.plain)
+            .onAppear {
+                Task {
+                    await vm.loadToday()
+                }
             }
         }
     }
 }
 
 
-#Preview {
-    do {
-        let cache = try TransactionsFileCache()
-        let mockService = try TransactionsService(cache: cache)
-        
-        let vm = TransactionsListViewModel(
-            direction: .outcome,
-            accountId: 1,
-            service: mockService
-        )
-        
-        let testAccount = BankAccount(
-            id: 1,
-            userId: 1,
-            name: "Тестовый счет",
-            balance: 1000,
-            currency: "RUB",
-            createdAt: Date(),
-            updatedAt: Date()
-        )
-        
-        let testCategory = Category(
-            id: 1,
-            name: "Кафе",
-            emoji: "☕",
-            direction: .outcome
-        )
-        
-        let testCategory2 = Category(
-            id: 2,
-            name: "Обед",
-            emoji: "🍔",
-            direction: .outcome
-        )
-        
-        // Создаем тестовые транзакции
-        let testTransactions = [
-            Transaction(
-                id: 1,
-                account: testAccount,
-                category: testCategory,
-                amount: 350,
-                transactionDate: Date(),
-                comment: "Кофе",
-                createdAt: Date(),
-                updatedAt: Date()
-            ),
-            Transaction(
-                id: 2,
-                account: testAccount,
-                category: testCategory2,
-                amount: 680,
-                transactionDate: Date().addingTimeInterval(-3600),
-                comment: "Обед",
-                createdAt: Date(),
-                updatedAt: Date()
-            )
-        ]
-        
-        for transaction in testTransactions {
-            cache.add(transaction)
-        }
-        try cache.save()
-        
-        vm.transactions = testTransactions
-        
-        return AnyView(TransactionsListView(vm: vm))
-        
-    } catch {
-        return AnyView(Text("Ошибка создания превью: \(error.localizedDescription)")
-            .padding()
-            .background(Color.red.opacity(0.3)))
-
-    }
-}
-
+//#Preview {
+//    do {
+//        let cache = try TransactionsFileCache()
+//        let mockService = try TransactionsService(cache: cache)
+//        
+//        let vm = TransactionsListViewModel(
+//            direction: .outcome,
+//            accountId: 1,
+//            service: mockService
+//        )
+//        
+//        let testAccount = BankAccount(
+//            id: 1,
+//            userId: 1,
+//            name: "Тестовый счет",
+//            balance: 1000,
+//            currency: "RUB",
+//            createdAt: Date(),
+//            updatedAt: Date()
+//        )
+//        
+//        let testCategory = Category(
+//            id: 1,
+//            name: "Кафе",
+//            emoji: "☕",
+//            direction: .outcome
+//        )
+//        
+//        let testCategory2 = Category(
+//            id: 2,
+//            name: "Обед",
+//            emoji: "🍔",
+//            direction: .outcome
+//        )
+//        
+//        // Создаем тестовые транзакции
+//        let testTransactions = [
+//            Transaction(
+//                id: 1,
+//                account: testAccount,
+//                category: testCategory,
+//                amount: 350,
+//                transactionDate: Date(),
+//                comment: "Кофе",
+//                createdAt: Date(),
+//                updatedAt: Date()
+//            ),
+//            Transaction(
+//                id: 2,
+//                account: testAccount,
+//                category: testCategory2,
+//                amount: 680,
+//                transactionDate: Date().addingTimeInterval(-3600),
+//                comment: "Обед",
+//                createdAt: Date(),
+//                updatedAt: Date()
+//            )
+//        ]
+//        
+//        for transaction in testTransactions {
+//            cache.add(transaction)
+//        }
+//        try cache.save()
+//        
+//        vm.transactions = testTransactions
+//        
+//        return AnyView(TransactionsListView(vm: vm))
+//        
+//    } catch {
+//        return AnyView(Text("Ошибка создания превью: \(error.localizedDescription)")
+//            .padding()
+//            .background(Color.red.opacity(0.3)))
+//
+//    }
+//}
+//
 

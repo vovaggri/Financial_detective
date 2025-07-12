@@ -3,7 +3,7 @@ enum Direction {
     case outcome
 }
 
-struct Category {
+struct Category: Identifiable {
     let id: Int
     var name: String
     var emoji: Character
