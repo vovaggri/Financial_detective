@@ -1,8 +1,15 @@
 import SwiftUI
 
-struct TransactionFormView: View {    
+struct TransactionFormView: View {
+    private enum Field: Hashable {
+        case amount
+        case comment
+    }
+    
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: TransactionFormViewModel
+    @State private var showValidationAlert = false
+    @FocusState private var focusedField: Field?
     
     private let decimalSeparator = Locale.current.decimalSeparator ?? "."
     
@@ -129,9 +136,6 @@ struct TransactionFormView: View {
                     }
                 }
             }
-            .onTapGesture {
-                hideKeyboard()
-            }
             .navigationTitle(
                 viewModel.isEditing
                 ? (viewModel.direction == .outcome ? "Мои Расходы" : "Мои Доходы")
@@ -147,19 +151,32 @@ struct TransactionFormView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Сохранить") {
-                        Task {
-                            try? await viewModel.save()
-                            dismiss()
+                        if viewModel.canSave {
+                            Task {
+                                try? await viewModel.save()
+                                dismiss()
+                            }
+                        } else {
+                            showValidationAlert = true
                         }
                     }
                     .foregroundStyle(Color(red: 0x6F/255,
                                                  green: 0x5D/255,
                                                  blue: 0xB7/255))
-                    .disabled(!viewModel.canSave)
                 }
+            }
+            .alert("Неполная форма", isPresented: $showValidationAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Пожалуйста, заполните все обязательные поля")
             }
             .task { await viewModel.loadData() }
         }
+        .background(Color.clear.contentShape(Rectangle())
+            .onTapGesture {
+                focusedField = nil
+            }
+        )
     }
 }
 
