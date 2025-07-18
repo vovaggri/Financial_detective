@@ -34,24 +34,7 @@ struct TransactionsListView: View {
                     Button {
                         editingTx = tx
                     } label: {
-                        VStack(alignment: .leading, spacing: 5) {
-                        // Верхняя строка: эмоджи + название
-                        HStack {
-                            Text("\(tx.category.emoji)")
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(tx.category.name)
-                                if let comment = tx.comment, !comment.isEmpty {
-                                    Text(comment)
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                            Spacer()
-                            Text(tx.amount.formatted(.currency(code: tx.account.currency)))
-                        }
-                    }
-                    .padding(.vertical, 8)
-                    .listRowBackground(Color.white)
+                        TransactionRow(tx: tx)
                     }
                     .buttonStyle(.plain)
                 }
@@ -86,8 +69,8 @@ struct TransactionsListView: View {
                     direction: vm.direction,
                     accountId: vm.accountId,
                     transactionsService: vm.service,
-                    categoriesService: CategoriesService(),
-                    bankAccountsService: BankAccountsService()
+                    categoriesService: CategoriesService(client: vm.client),
+                    bankAccountsService: BankAccountsService(client: vm.client, accountId: vm.accountId)
                 )
                 .interactiveDismissDisabled()
             }
@@ -98,8 +81,8 @@ struct TransactionsListView: View {
                     direction: vm.direction,
                     accountId: vm.accountId,
                     transactionsService: vm.service,
-                    categoriesService: CategoriesService(),
-                    bankAccountsService: BankAccountsService()
+                    categoriesService: CategoriesService(client: vm.client),
+                    bankAccountsService: BankAccountsService(client: vm.client, accountId: vm.accountId)
                 )
                 .interactiveDismissDisabled()
             }
@@ -119,16 +102,17 @@ struct TransactionsListView: View {
                         // Инициализируем HistoryViewModel теми же параметрами
                         HistoryView(
                             vm: HistoryViewModel(
-                            direction: vm.direction,
-                            accountId: vm.accountId,
-                            service: vm.service
+                                client: vm.client,
+                                service: vm.service,
+                                direction: vm.direction,
+                                accountId: vm.accountId
                             )
                         )
                     } label: {
                         Image(systemName: "clock")
                             .foregroundColor(Color(red: 0x6F/255,
-                                green: 0x5D/255,
-                                blue: 0xB7/255)
+                                                   green: 0x5D/255,
+                                                   blue: 0xB7/255)
                             )
                     }
                 }
@@ -140,6 +124,30 @@ struct TransactionsListView: View {
                 }
             }
         }
+    }
+}
+
+private struct TransactionRow: View {
+    let tx: Transaction
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack {
+                Text("\(tx.category.emoji)")
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(tx.category.name)
+                    if let comment = tx.comment, !comment.isEmpty {
+                        Text(comment)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                Spacer()
+                Text(tx.amount.formatted(.currency(code: tx.account.currency)))
+            }
+        }
+        .padding(.vertical, 8)
+        .listRowBackground(Color.white)
     }
 }
 

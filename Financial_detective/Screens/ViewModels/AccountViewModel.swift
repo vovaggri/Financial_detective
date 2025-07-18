@@ -9,9 +9,12 @@ final class AccountViewModel: ObservableObject {
     // Список доступных валют (можно вынести в сервис)
     let currencies = ["RUB", "USD", "EUR"]
     
-    private let service = BankAccountsService()
+    private let service: BankAccountsService
     
     init() {
+        let client = try! NetworkClient(token: "")
+        self.service = BankAccountsService(client: client)
+        
         Task {
             await loadAccount()
         }

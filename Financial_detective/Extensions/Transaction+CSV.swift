@@ -49,8 +49,7 @@ extension Transaction {
                 continue
             }
             
-            let account = BankAccount(id: accId, userId: 0, name: accName, balance: balance, currency: currency, createdAt: createrAt, updatedAt: updatedAt
-            )
+            let account = BankAccount(id: accId, name: accName, balance: balanceStr, currency: currency, createdAt: createrAt, updatedAt: updatedAt)
             
             guard
                 let catIdStr = columnValue("categoryId", in: cols, using: indices),

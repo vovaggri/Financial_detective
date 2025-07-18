@@ -5,7 +5,12 @@ final class CategoriesViewModel: ObservableObject {
     @Published var allCategories: [Category] = []
     @Published var searchText: String = ""
     
-    private let service = CategoriesService()
+    private let service: CategoriesService
+    
+    init() {
+        let client = try! NetworkClient(token: "")
+        self.service = CategoriesService(client: client)
+    }
     
     func loadCategories() async {
         do {
@@ -21,7 +26,7 @@ final class CategoriesViewModel: ObservableObject {
             return allCategories
         }
         return allCategories.filter { category in
-            category.name.fuxxyMatches(query)
+            category.name.fuzzyMatches(query)
         }
     }
 }

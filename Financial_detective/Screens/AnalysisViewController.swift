@@ -24,14 +24,17 @@ final class AnalysisViewController: UIViewController {
 
     // MARK: — VM
 
-    public let viewModel: AnalysisViewModel
+    let viewModel: AnalysisViewModel
+    public let client: NetworkClient
 
     // MARK: — Init
 
-    init(viewModel: AnalysisViewModel) {
+    init(viewModel: AnalysisViewModel, client: NetworkClient) {
         self.viewModel = viewModel
+        self.client = client
         super.init(nibName: nil, bundle: nil)
     }
+    @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
 
     // MARK: — Lifecycle

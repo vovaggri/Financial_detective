@@ -170,6 +170,15 @@ struct TransactionFormView: View {
             } message: {
                 Text("Пожалуйста, заполните все обязательные поля")
             }
+            .alert("Ошибка", isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { _ in viewModel.errorMessage = nil }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage ?? "")
+            }
+
             .task { await viewModel.loadData() }
         }
         .background(Color.clear.contentShape(Rectangle())

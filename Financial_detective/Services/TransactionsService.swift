@@ -1,66 +1,129 @@
 import Foundation
 
+struct EmptyResponse: Decodable {}
+
 enum TransactionServiceError: Error {
     case notFound(id: Int)
 }
 
 final class TransactionsService {
+    let client: NetworkClient
     private let cache: TransactionsFileCache
-    
-    init(cache: TransactionsFileCache) throws {
+
+    init(client: NetworkClient, cache: TransactionsFileCache) {
+        self.client = client
         self.cache = cache
-        try cache.load()
     }
     
-    func fetchTransactions(accountId: Int, startDate: Date? = nil, endDate: Date? = nil) async throws -> [Transaction] {
-        var list = cache.allTransactions.filter { $0.account.id == accountId }
+    func fetchTransactions(
+        accountId: Int,
+        startDate: Date? = nil,
+        endDate: Date? = nil
+    ) async throws -> [Transaction] {
+        // 1) Формируем базовый путь и query-параметры
+        var path = "/api/v1/transactions/account/\(accountId)/period"
+        let df = DateFormatter()
+        df.timeZone = TimeZone(secondsFromGMT: 0)
+        df.dateFormat = "yyyy-MM-dd"
         
+        var params = [String]()
         if let from = startDate {
-            list = list.filter { $0.transactionDate >= from }
+            params.append("startDate=\(df.string(from: from))")
         }
         if let to = endDate {
-            list = list.filter { $0.transactionDate <= to }
+            params.append("endDate=\(df.string(from: to))")
+        }
+        if !params.isEmpty {
+            path += "?" + params.joined(separator: "&")
         }
         
-        return list
-    }
-    
-    func createTransaction(_ transaction: Transaction) async throws -> Transaction {
-        let newId = (cache.allTransactions.map { $0.id }.max() ?? 0) + 1
-        let now = Date()
-        let newTransaction = Transaction(
-            id: newId,
-            account: transaction.account,
-            category: transaction.category,
-            amount: transaction.amount,
-            transactionDate: transaction.transactionDate,
-            comment: transaction.comment,
-            createdAt: now,
-            updatedAt: now
+        // 2) Вызываем универсальный request (GET без body)
+        let remote: [Transaction] = try await client.request(
+            path: path,
+            method: "GET"
         )
-        cache.add(newTransaction)
-        try cache.save()
-        return newTransaction
+        
+        // 3) Сохраняем в кеш
+        try? cache.reset()
+        remote.forEach(cache.add)
+        try? cache.save()
+        
+        return remote
     }
 
-    
-    func updateTransaction(_ transaction: Transaction) async throws -> Transaction {
-        guard let old = cache.allTransactions.first(where: { $0.id == transaction.id }) else {
-            throw TransactionServiceError.notFound(id: transaction.id)
-        }
-        
-        let now = Date()
-        let updated = Transaction(id: old.id, account: transaction.account, category: transaction.category, amount: transaction.amount, transactionDate: transaction.transactionDate, createdAt: old.createdAt, updatedAt: now)
-        
-        cache.remove(id: transaction.id)
-        cache.add(transaction)
+    func createTransaction(
+      accountId: Int,
+      categoryId: Int,
+      amount: Decimal,
+      date: Date,
+      comment: String?
+    ) async throws -> Transaction {
+      let body = CreateTransactionRequest(
+        accountId: accountId,
+        categoryId: categoryId,
+        amount: amount,
+        transactionDate: date,
+        comment: comment
+      )
+
+      let created: Transaction = try await client.request(
+        path: API.createTransaction.path,
+        method: API.createTransaction.method,
+        body: body
+      )
+      cache.add(created)
+      try cache.save()
+      return created
+    }
+
+
+    func updateTransaction(_ tx: Transaction) async throws -> Transaction {
+        let updated: Transaction = try await client.request(
+            path: API.updateTransaction(id: tx.id).path,
+            method: API.updateTransaction(id: tx.id).method,
+            body: tx
+        )
+        cache.remove(id: tx.id)
+        cache.add(updated)
         try cache.save()
-        
         return updated
     }
-    
+
     func deleteTransaction(id: Int) async throws {
+        do {
+            let _: EmptyResponse = try await client.request(
+                path: API.deleteTransaction(id: id).path,
+                method: API.deleteTransaction(id: id).method,
+                body: Optional<EmptyBody>.none as EmptyBody?
+            )
+        } catch let NetworkError.httpError(status, _) where status == 404 {
+            throw TransactionServiceError.notFound(id: id)
+        } catch {
+            throw error
+        }
         cache.remove(id: id)
         try cache.save()
     }
+    
+    func fetchTransactionsPeriod(
+        accountId: Int,
+        startDate: Date,
+        endDate: Date
+      ) async throws -> [Transaction] {
+        // 1) Собираем query-параметры в строку YYYY-MM-DD
+        let df = DateFormatter()
+        df.timeZone   = TimeZone(secondsFromGMT: 0)   // UTC
+        df.dateFormat = "yyyy-MM-dd"
+        
+        var path = "/api/v1/transactions/account/\(accountId)/period"
+        let qs = [
+          "startDate=\(df.string(from: startDate))",
+          "endDate=\(df.string(from: endDate))"
+        ].joined(separator: "&")
+        path += "?\(qs)"
+        
+        // 2) Делаем запрос через client.request (c кешем внутри)
+        return try await client.request(path: path, method: "GET", body: Optional<Data>.none)
+      }
 }
+

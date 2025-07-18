@@ -1,21 +1,25 @@
 import Foundation
 
 final class BankAccountsService {
-    private var account: BankAccount
+    private let client: NetworkClient
+    private let accountId: Int
     
-    init() {
-        let now = Date()
-        account = BankAccount(id: 1, userId: 1, name: "Основной счет", balance: 1000.00, currency: "RUB", createdAt: now, updatedAt: now)
+    init(client: NetworkClient, accountId: Int = 83) {
+        self.client = client
+        self.accountId = accountId
     }
     
     func fetchAccount() async throws -> BankAccount {
-        return account
+        try await client.request(path: API.getAccount(id: accountId).path,
+                                 method: API.getAccount(id: accountId).method,
+                                 body: Optional<EmptyBody>.none as EmptyBody?)
     }
     
     func updateAccount(_ updated: BankAccount) async throws -> BankAccount {
-        let now = Date()
-        account = BankAccount(id: updated.id, userId: updated.userId, name: updated.name, balance: updated.balance, currency: updated.currency, createdAt: updated.createdAt, updatedAt: now)
-        return account
+        try await client.request(path: API.updateAccount(id: accountId).path,
+                                 method: API.updateAccount(id: accountId).method,
+                                 body: updated)
     }
 }
 
+struct EmptyBody: Encodable {}

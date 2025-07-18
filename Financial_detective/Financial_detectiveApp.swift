@@ -18,7 +18,7 @@ import SwiftUI
 
 @main
 struct Financial_detectiveApp: App {
-    @StateObject private var transactionsServiceHolder = TransactionsServiceHolder()
+    @StateObject private var transactionsServiceHolder = TransactionsServiceHolder(token: "")
     
     init() {
         let appearance = UITabBarAppearance()

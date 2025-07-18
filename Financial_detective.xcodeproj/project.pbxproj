@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		113AAB142E29C7F900DE26ED /* TransactionFilterRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113AAB132E29C7EA00DE26ED /* TransactionFilterRequest.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		1101D44B2DFC6FEE005B3996 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -18,6 +22,7 @@
 
 /* Begin PBXFileReference section */
 		1101D4472DFC6FEE005B3996 /* Financial_detectiveUnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Financial_detectiveUnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		113AAB132E29C7EA00DE26ED /* TransactionFilterRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionFilterRequest.swift; sourceTree = "<group>"; };
 		11EAD6C32DF9F14000D48534 /* Financial_detective.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Financial_detective.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -55,6 +60,7 @@
 		11EAD6BA2DF9F13F00D48534 = {
 			isa = PBXGroup;
 			children = (
+				113AAB132E29C7EA00DE26ED /* TransactionFilterRequest.swift */,
 				11EAD6C52DF9F14000D48534 /* Financial_detective */,
 				1101D4482DFC6FEE005B3996 /* Financial_detectiveUnitTests */,
 				11EAD6C42DF9F14000D48534 /* Products */,
@@ -186,6 +192,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				113AAB142E29C7F900DE26ED /* TransactionFilterRequest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
