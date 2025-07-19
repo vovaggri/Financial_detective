@@ -7,6 +7,14 @@ struct HistoryView: View {
     @State private var showForm = false
     @State private var editingTx: Transaction?
     
+    private let client: NetworkClient = {
+        do {
+            return try NetworkClient(token: Bundle.main.apiToken)
+        } catch {
+            fatalError("Не смогли инициализировать NetworkClient: \(error)")
+        }
+    }()
+    
     let accent = Color("AccentColor")
 
     var body: some View {
@@ -58,38 +66,22 @@ struct HistoryView: View {
                     Button {
                         editingTx = tx
                     } label: {
-                        HStack {
-                            Text("\(tx.category.emoji)")
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(tx.category.name)
-                                if let comment = tx.comment, !comment.isEmpty {
-                                    Text(comment)
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                            Spacer()
-                            VStack(alignment: .trailing) {
-                                Text(tx.amount.formatted(.currency(code: tx.account.currency)))
-                                Text(tx.transactionDate, style: .time)
-                                    .font(.caption)
-                            }
-                        }
+                        HistoryTransactionRow(tx: tx)
                     }
                     .buttonStyle(.plain)
                 }
             }
         }
         .fullScreenCover(item: $editingTx, onDismiss: {
-            vm.loadHistory()
+            Task { await vm.loadHistory() }
         }) { tx in
             TransactionFormView(
                 transaction: tx,
                 direction: vm.direction,
                 accountId: vm.accountId,
                 transactionsService: vm.service,
-                categoriesService: CategoriesService(),
-                bankAccountsService: BankAccountsService()
+                categoriesService: CategoriesService(client: vm.client),
+                bankAccountsService: BankAccountsService(client: vm.client)
             )
             .interactiveDismissDisabled()
         }
@@ -118,7 +110,8 @@ struct HistoryView: View {
             
             ToolbarItem(placement: .navigationBarTrailing) {
                 NavigationLink {
-                    AnalysisViewControllerRepresentable(viewModel: AnalysisViewModel(direction: vm.direction, accountId: vm.accountId, service: vm.service))
+                    let viewModel = AnalysisViewModel(client: client, service: vm.service, direction: vm.direction, accountId: vm.accountId)
+                    AnalysisViewControllerRepresentable(viewModel: viewModel)
                         .ignoresSafeArea()
                         .navigationBarTitleDisplayMode(.large)
                         .navigationTitle("Анализ")
@@ -133,14 +126,42 @@ struct HistoryView: View {
             if newStart > vm.endDate {
                 vm.endDate = newStart
             }
-            vm.loadHistory()
+            Task {
+                await vm.loadHistory()
+            }
         }
         .onChange(of: vm.endDate) { newEnd in
             if newEnd < vm.startDate {
                 vm.startDate = newEnd
             }
-            vm.loadHistory()
+            Task {
+                await vm.loadHistory()
+            }
         }
         .background(Color(.systemGray6).ignoresSafeArea())
+    }
+}
+
+private struct HistoryTransactionRow: View {
+    let tx: Transaction
+
+    var body: some View {
+        HStack {
+            Text("\(tx.category.emoji)")
+            VStack(alignment: .leading, spacing: 4) {
+                Text(tx.category.name)
+                if let comment = tx.comment, !comment.isEmpty {
+                    Text(comment)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            }
+            Spacer()
+            VStack(alignment: .trailing) {
+                Text(tx.amount.formatted(.currency(code: tx.account.currency)))
+                Text(tx.transactionDate, style: .time)
+                    .font(.caption)
+            }
+        }
     }
 }

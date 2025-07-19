@@ -1,5 +1,5 @@
 extension String {
-    func fuxxyMatches(_ pattern: String) -> Bool {
+    func fuzzyMatches(_ pattern: String) -> Bool {
         let text = self.lowercased()
         let pattern = pattern.lowercased()
         var ti = text.startIndex

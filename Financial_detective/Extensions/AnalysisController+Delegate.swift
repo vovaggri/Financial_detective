@@ -11,8 +11,8 @@ extension AnalysisViewController: UITableViewDelegate {
             direction: viewModel.direction,
             accountId: viewModel.accountId,
             transactionsService: viewModel.service,
-            categoriesService: CategoriesService(),
-            bankAccountsService: BankAccountsService()
+            categoriesService: CategoriesService(client: client),
+            bankAccountsService: BankAccountsService(client: client)
         )
         // оборачиваем в хостинг-контроллер
         let hosting = UIHostingController(rootView: formView)

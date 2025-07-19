@@ -9,9 +9,12 @@ final class AccountViewModel: ObservableObject {
     // Список доступных валют (можно вынести в сервис)
     let currencies = ["RUB", "USD", "EUR"]
     
-    private let service = BankAccountsService()
+    private let service: BankAccountsService
     
     init() {
+        let client = try! NetworkClient(token: Bundle.main.apiToken)
+        self.service = BankAccountsService(client: client)
+        
         Task {
             await loadAccount()
         }
@@ -32,15 +35,21 @@ final class AccountViewModel: ObservableObject {
     }
     
     @MainActor
-    func saveChanges() async {
-        guard let guardAccount = account else { return }
+    func saveChanges(newBalance: String) async {
+        guard let acc = account else { return }
         do {
-            account = try await service.updateAccount(guardAccount)
+            account = try await service.updateAccount(
+                id: acc.id,
+                name: acc.name,   
+                balance: newBalance,
+                currency: acc.currency
+            )
             isEditing = false
         } catch {
             print("Save error: ", error)
         }
     }
+
     
     func toogleEdit() {
         isEditing.toggle()

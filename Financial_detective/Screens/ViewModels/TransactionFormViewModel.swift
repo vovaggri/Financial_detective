@@ -2,6 +2,8 @@ import SwiftUI
 
 @MainActor
 final class TransactionFormViewModel: ObservableObject {
+    @Published var errorMessage: String?
+    
     // MARK: - Входные параметры
     private let existingTransaction: Transaction?
     let isEditing: Bool
@@ -78,7 +80,8 @@ final class TransactionFormViewModel: ObservableObject {
     }
 
     /// Сохранение (создание или обновление)
-    func save() async throws {
+    /// Сохранение (создание или обновление)
+    func save() async {
         guard
             let account = account,
             let category = categories.first(where: { $0.id == selectedCategoryId }),
@@ -96,16 +99,61 @@ final class TransactionFormViewModel: ObservableObject {
             updatedAt: Date()
         )
 
-        if isEditing {
-            _ = try await transactionsService.updateTransaction(tx)
-        } else {
-            _ = try await transactionsService.createTransaction(tx)
+        do {
+            if isEditing {
+                _ = try await transactionsService.updateTransaction(tx)
+            } else {
+                _ = try await transactionsService.createTransaction(
+                    accountId: tx.account.id,
+                    categoryId: tx.category.id,
+                    amount: tx.amount,
+                    date: tx.transactionDate,
+                    comment: tx.comment
+                )
+            }
+        } catch let NetworkError.httpError(statusCode, data) {
+            // 🎯 Здесь у тебя есть statusCode и тело ответа
+            print("❌ Ошибка HTTP: \(statusCode)")
+
+            // Например:
+            switch statusCode {
+            case 400:
+                // Некорректные данные
+                await MainActor.run {
+                    // Обнови @Published состояние ошибки
+                    self.errorMessage = "Некорректные данные, проверьте ввод"
+                }
+            case 401:
+                await MainActor.run {
+                    self.errorMessage = "Неавторизован — проверь токен"
+                }
+            case 404:
+                await MainActor.run {
+                    self.errorMessage = "Счет или категория не найдены"
+                }
+            default:
+                await MainActor.run {
+                    self.errorMessage = "Неизвестная ошибка (\(statusCode))"
+                }
+            }
+        } catch {
+            // Любая другая ошибка (например, сеть)
+            await MainActor.run {
+                self.errorMessage = "Сетевая ошибка: \(error.localizedDescription)"
+            }
         }
     }
+
 
     /// Удаление операции
     func delete() async throws {
         guard let id = existingTransaction?.id else { return }
-        try await transactionsService.deleteTransaction(id: id)
+        do {
+            try await transactionsService.deleteTransaction(id: id)
+        } catch TransactionServiceError.notFound(let id) {
+            throw TransactionServiceError.notFound(id: id)
+        } catch {
+            throw error
+        }
     }
 }

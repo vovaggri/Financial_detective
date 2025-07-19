@@ -10,6 +10,7 @@ struct TransactionFormView: View {
     @StateObject private var viewModel: TransactionFormViewModel
     @State private var showValidationAlert = false
     @FocusState private var focusedField: Field?
+    @State private var showErrorAlert = false
     
     private let decimalSeparator = Locale.current.decimalSeparator ?? "."
     
@@ -123,8 +124,17 @@ struct TransactionFormView: View {
                     Section {
                         Button(role: .destructive) {
                             Task {
-                                try? await viewModel.delete()
-                                dismiss()
+                                do {
+                                    try await viewModel.delete()
+                                    // сбросим прошлые ошибки
+                                    dismiss()
+                                } catch TransactionServiceError.notFound(let id) {
+                                    viewModel.errorMessage = "Операция с id \(id) не найдена"
+                                    showErrorAlert = true
+                                } catch {
+                                    viewModel.errorMessage = "Ошибка при удалении: \(error.localizedDescription)"
+                                    dismiss()
+                                }
                             }
                         } label: {
                             Text(
@@ -170,6 +180,15 @@ struct TransactionFormView: View {
             } message: {
                 Text("Пожалуйста, заполните все обязательные поля")
             }
+            .alert("Ошибка", isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { _ in viewModel.errorMessage = nil }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage ?? "")
+            }
+
             .task { await viewModel.loadData() }
         }
         .background(Color.clear.contentShape(Rectangle())

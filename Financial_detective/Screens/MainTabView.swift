@@ -1,16 +1,22 @@
 import SwiftUI
 
 struct MainTabView: View {
-    @EnvironmentObject var store: TransactionsServiceHolder
+    @StateObject private var store = TransactionsServiceHolder(token: Bundle.main.apiToken)
+    
+    private let client: NetworkClient = {
+        do {
+            return try NetworkClient(token: Bundle.main.apiToken)
+        } catch {
+            fatalError("Не смогли инициализировать NetworkClient: \(error)")
+        }
+    }()
 
     var body: some View {
         TabView {
             NavigationStack {
                 TransactionsListView(
                   vm: TransactionsListViewModel(
-                    direction: .outcome,
-                    accountId: store.accountId,
-                    service: store.service
+                    client: client, service: store.service, direction: .outcome, accountId: store.accountId
                   )
                 )
             }
@@ -22,11 +28,9 @@ struct MainTabView: View {
 
             NavigationStack {
                 TransactionsListView(
-                  vm: TransactionsListViewModel(
-                    direction: .income,
-                    accountId: store.accountId,
-                    service: store.service
-                  )
+                    vm: TransactionsListViewModel(
+                      client: client, service: store.service, direction: .income, accountId: store.accountId
+                    )
                 )
             }
             .tabItem {

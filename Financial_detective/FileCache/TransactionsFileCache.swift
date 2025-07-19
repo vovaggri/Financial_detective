@@ -9,55 +9,46 @@ final class TransactionsFileCache {
     private let fileURL: URL
     private var transactions: [Transaction] = []
     
+    /// Текущий набор транзакций
     var allTransactions: [Transaction] {
         transactions
     }
     
+    /// Конструирует cache на файл transactions.json в documents
     init(fileName: String = "transactions.json") throws {
-        let fileManager = FileManager.default
-        let urls = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
-        guard let docs = urls.first else {
+        let fm = FileManager.default
+        guard let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first else {
             throw TransactionsFileCacheError.documentsDirectoryNotFound
         }
         self.fileURL = docs.appendingPathComponent(fileName)
     }
     
+    /// Загружает из диска, декодируя JSON в [Transaction]
     func load() throws {
-        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: fileURL.path) else {
+            // если файла нет — считаем, что кеш пуст
             transactions = []
             return
         }
-        
         let data = try Data(contentsOf: fileURL)
-        let jsonAny = try JSONSerialization.jsonObject(with: data, options: [])
+        let decoded = try JSONDecoder().decode([Transaction].self, from: data)
         
-        guard let array = jsonAny as? [Any] else {
-            throw TransactionsFileCacheError.invalidJSONStructure
-        }
-        
-        var parsed = [Transaction]()
-        for element in array {
-            if let transaction = Transaction.parse(jsonObject: element) {
-                parsed.append(transaction)
-            }
-        }
-        
+        // Убираем дубликаты по id
         var unique = [Int: Transaction]()
-        for transaction in parsed {
-            if unique[transaction.id] == nil {
-                unique[transaction.id] = transaction
-            }
+        for tx in decoded {
+            unique[tx.id] = tx
         }
         transactions = Array(unique.values)
     }
     
+    /// Сохраняет текущий массив в файл, кодируя через JSONEncoder
     func save() throws {
-        let jsonArray = transactions.map { $0.jsonObject }
-        
-        let data = try JSONSerialization.data(withJSONObject: jsonArray, options: [.prettyPrinted])
-        try data.write(to: fileURL, options: [.atomic])
+        let data = try JSONEncoder().encode(transactions)
+        try data.write(to: fileURL, options: Data.WritingOptions.atomic)
     }
     
+    /// Добавляет транзакцию, если её ещё нет
     func add(_ transaction: Transaction) {
         guard !transactions.contains(where: { $0.id == transaction.id }) else {
             return
@@ -65,15 +56,15 @@ final class TransactionsFileCache {
         transactions.append(transaction)
     }
     
+    /// Удаляет по id
     func remove(id: Int) {
         transactions.removeAll { $0.id == id }
     }
     
-    /// Полностью сбросить кеш на диск
+    /// Полностью очищает кеш и перезаписывает пустой массив
     func reset() throws {
-        // очистить память
-        self.transactions.removeAll()
-        // перезаписать файл нулевым массивом
+        transactions.removeAll()
         try save()
     }
 }
+

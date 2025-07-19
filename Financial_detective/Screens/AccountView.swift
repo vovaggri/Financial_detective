@@ -37,50 +37,14 @@ struct AccountView: View {
             NavigationView {
                 Form {
                     if let account = vm.account {
-                        // Баланс
-                        Section(header: EmptyView(), footer: EmptyView()) {
-                            HStack {
-                                Text("💰   Баланс")
-                                Spacer()
-                                
-                                if vm.isEditing {
-                                    TextField("Сумма", text: $textBalance)
-                                      .keyboardType(.decimalPad)
-                                      .focused($amountFieldFocused)
-                                      .multilineTextAlignment(.trailing)
-                                      .onChange(of: textBalance) { new in
-                                        let sep = Locale.current.decimalSeparator ?? ","
-                                        let allowed = CharacterSet.decimalDigits.union(CharacterSet(charactersIn: sep))
-                                        let filtered = String(new.unicodeScalars.filter { allowed.contains($0) })
-                                        if filtered != new {
-                                          textBalance = filtered
-                                        }
-
-                                        let normalized = filtered.replacingOccurrences(of: sep, with: ".")
-                                        if let dec = Decimal(string: normalized) {
-                                          vm.account?.balance = dec
-                                        }
-                                      }
-                                } else {
-                                    HStack(spacing: 0) {
-                                        Text(
-                                            account.balance,
-                                            format: .number.precision(.fractionLength(0...2))
-                                        )
-                                        .modifier(SpoilerModifier(isActive: vm.isBalanceHidden))
-                                        Text(" \(option(for: account.currency).symbol)")
-                                    }
-                                    .opacity(vm.isBalanceHidden ? 0.7 : 1)
-                                }
-                            }
-                        }
-                        .listRowBackground(
-                            vm.isEditing
-                            ? Color(.systemBackground)
-                            : Color(red: 42/255, green: 232/255, blue: 129/255)
+                        BalanceSection(
+                            isEditing: vm.isEditing,
+                            isBalanceHidden: vm.isBalanceHidden,
+                            textBalance: $textBalance,
+                            amountFieldFocused: $amountFieldFocused,
+                            account: account,
+                            option: option
                         )
-                        .listRowSeparator(.hidden)
-                        
                         // Валюта
                         Section(header: EmptyView(), footer: EmptyView()) {
                             HStack {
@@ -120,8 +84,11 @@ struct AccountView: View {
                         let title = vm.isEditing ? "Сохранить" : "Редактировать"
                         Button(title) {
                             if vm.isEditing {
-                                Task { await vm.saveChanges() }
+                                Task { await vm.saveChanges(newBalance: textBalance) }
                             } else {
+                                if let account = vm.account {
+                                    textBalance = account.balance
+                                }
                                 vm.toogleEdit()
                             }
                         }
@@ -148,9 +115,47 @@ struct AccountView: View {
     }
 }
 
-#Preview {
-    AccountView()
+private struct BalanceSection: View {
+    let isEditing: Bool
+    let isBalanceHidden: Bool
+    @Binding var textBalance: String
+    var amountFieldFocused: FocusState<Bool>.Binding
+    var account: BankAccount
+    let option: (String) -> CurrencyOption
+
+    var body: some View {
+        Section(header: EmptyView(), footer: EmptyView()) {
+            HStack {
+                Text("💰   Баланс")
+                Spacer()
+                if isEditing {
+                    TextField("Сумма", text: $textBalance)
+                        .keyboardType(.decimalPad)
+                        .focused(amountFieldFocused)
+                        .multilineTextAlignment(.trailing)
+                    // onChange logic можно добавить здесь, если нужно
+                } else {
+                    HStack(spacing: 0) {
+                        Text(account.balance)
+                            .modifier(SpoilerModifier(isActive: isBalanceHidden))
+                        Text(" \(option(account.currency).symbol)")
+                    }
+                    .opacity(isBalanceHidden ? 0.7 : 1)
+                }
+            }
+        }
+        .listRowBackground(
+            isEditing
+            ? Color(.systemBackground)
+            : Color(red: 42/255, green: 232/255, blue: 129/255)
+        )
+        .listRowSeparator(.hidden)
+    }
 }
+
+//#Preview {
+//    AccountView()
+//}
 
 
 
