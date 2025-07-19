@@ -8,7 +8,7 @@ final class CategoriesViewModel: ObservableObject {
     private let service: CategoriesService
     
     init() {
-        let client = try! NetworkClient(token: "")
+        let client = try! NetworkClient(token: Bundle.main.apiToken)
         self.service = CategoriesService(client: client)
     }
     

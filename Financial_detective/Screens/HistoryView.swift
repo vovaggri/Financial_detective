@@ -9,7 +9,7 @@ struct HistoryView: View {
     
     private let client: NetworkClient = {
         do {
-            return try NetworkClient(token: "")
+            return try NetworkClient(token: Bundle.main.apiToken)
         } catch {
             fatalError("Не смогли инициализировать NetworkClient: \(error)")
         }

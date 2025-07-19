@@ -12,7 +12,7 @@ final class AccountViewModel: ObservableObject {
     private let service: BankAccountsService
     
     init() {
-        let client = try! NetworkClient(token: "")
+        let client = try! NetworkClient(token: Bundle.main.apiToken)
         self.service = BankAccountsService(client: client)
         
         Task {
