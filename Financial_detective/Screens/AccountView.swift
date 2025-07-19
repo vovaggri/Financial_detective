@@ -84,8 +84,11 @@ struct AccountView: View {
                         let title = vm.isEditing ? "Сохранить" : "Редактировать"
                         Button(title) {
                             if vm.isEditing {
-                                Task { await vm.saveChanges() }
+                                Task { await vm.saveChanges(newBalance: textBalance) }
                             } else {
+                                if let account = vm.account {
+                                    textBalance = account.balance
+                                }
                                 vm.toogleEdit()
                             }
                         }

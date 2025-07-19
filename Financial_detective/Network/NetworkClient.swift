@@ -76,12 +76,12 @@ final class NetworkClient {
                 let str = try container.decode(String.self)
                 guard let date = ISO8601DateFormatter.withFractionalSeconds.date(from: str) else {
                     throw DecodingError.dataCorruptedError(in: container,
-                        debugDescription: "Invalid date: \(str)")
+                                                           debugDescription: "Invalid date: \(str)")
                 }
                 return date
             }
             return try decoder.decode(Res.self, from: data)
-
+            
         } catch {
             throw NetworkError.decodingError(error)
         }

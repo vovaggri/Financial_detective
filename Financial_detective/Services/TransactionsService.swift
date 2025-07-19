@@ -75,13 +75,21 @@ final class TransactionsService {
       try cache.save()
       return created
     }
-
-
+    
+    
     func updateTransaction(_ tx: Transaction) async throws -> Transaction {
+        let body = CreateTransactionRequest(
+            accountId:    tx.account.id,
+            categoryId:   tx.category.id,
+            amount:       tx.amount,
+            transactionDate: tx.transactionDate,
+            comment:      tx.comment
+        )
+        
         let updated: Transaction = try await client.request(
             path: API.updateTransaction(id: tx.id).path,
             method: API.updateTransaction(id: tx.id).method,
-            body: tx
+            body: body
         )
         cache.remove(id: tx.id)
         cache.add(updated)
@@ -91,8 +99,9 @@ final class TransactionsService {
 
     func deleteTransaction(id: Int) async throws {
         do {
-            let _: EmptyResponse = try await client.request(
-                path: API.deleteTransaction(id: id).path,
+            let path = "/api/v1/transactions/\(id)?id=\(id)"
+            let _: Transaction = try await client.request(
+                path: path,
                 method: API.deleteTransaction(id: id).method,
                 body: Optional<EmptyBody>.none as EmptyBody?
             )

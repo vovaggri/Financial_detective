@@ -148,6 +148,12 @@ final class TransactionFormViewModel: ObservableObject {
     /// Удаление операции
     func delete() async throws {
         guard let id = existingTransaction?.id else { return }
-        try await transactionsService.deleteTransaction(id: id)
+        do {
+            try await transactionsService.deleteTransaction(id: id)
+        } catch TransactionServiceError.notFound(let id) {
+            throw TransactionServiceError.notFound(id: id)
+        } catch {
+            throw error
+        }
     }
 }

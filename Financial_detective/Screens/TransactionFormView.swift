@@ -10,6 +10,7 @@ struct TransactionFormView: View {
     @StateObject private var viewModel: TransactionFormViewModel
     @State private var showValidationAlert = false
     @FocusState private var focusedField: Field?
+    @State private var showErrorAlert = false
     
     private let decimalSeparator = Locale.current.decimalSeparator ?? "."
     
@@ -123,8 +124,17 @@ struct TransactionFormView: View {
                     Section {
                         Button(role: .destructive) {
                             Task {
-                                try? await viewModel.delete()
-                                dismiss()
+                                do {
+                                    try await viewModel.delete()
+                                    // сбросим прошлые ошибки
+                                    dismiss()
+                                } catch TransactionServiceError.notFound(let id) {
+                                    viewModel.errorMessage = "Операция с id \(id) не найдена"
+                                    showErrorAlert = true
+                                } catch {
+                                    viewModel.errorMessage = "Ошибка при удалении: \(error.localizedDescription)"
+                                    dismiss()
+                                }
                             }
                         } label: {
                             Text(

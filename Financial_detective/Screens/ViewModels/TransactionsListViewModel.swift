@@ -4,14 +4,12 @@ final class TransactionsListViewModel: ObservableObject {
     @Published var transactions: [Transaction] = []
     @Published var totalAmount: Decimal = 0
     
-    // MARK: – Новое!
     public let client: NetworkClient
     
     let direction: Direction
     let service: TransactionsService
     let accountId: Int
 
-    /// Теперь инициализатор принимает и client, и service
     init(
         client: NetworkClient,
         service: TransactionsService,

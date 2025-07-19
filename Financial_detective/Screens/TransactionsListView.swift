@@ -70,7 +70,7 @@ struct TransactionsListView: View {
                     accountId: vm.accountId,
                     transactionsService: vm.service,
                     categoriesService: CategoriesService(client: vm.client),
-                    bankAccountsService: BankAccountsService(client: vm.client, accountId: vm.accountId)
+                    bankAccountsService: BankAccountsService(client: vm.client)
                 )
                 .interactiveDismissDisabled()
             }
@@ -82,7 +82,7 @@ struct TransactionsListView: View {
                     accountId: vm.accountId,
                     transactionsService: vm.service,
                     categoriesService: CategoriesService(client: vm.client),
-                    bankAccountsService: BankAccountsService(client: vm.client, accountId: vm.accountId)
+                    bankAccountsService: BankAccountsService(client: vm.client)
                 )
                 .interactiveDismissDisabled()
             }

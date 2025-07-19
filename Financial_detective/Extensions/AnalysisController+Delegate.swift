@@ -12,7 +12,7 @@ extension AnalysisViewController: UITableViewDelegate {
             accountId: viewModel.accountId,
             transactionsService: viewModel.service,
             categoriesService: CategoriesService(client: client),
-            bankAccountsService: BankAccountsService(client: client, accountId: viewModel.accountId)
+            bankAccountsService: BankAccountsService(client: client)
         )
         // оборачиваем в хостинг-контроллер
         let hosting = UIHostingController(rootView: formView)
