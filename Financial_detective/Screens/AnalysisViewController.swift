@@ -305,7 +305,7 @@ final class AnalysisViewController: UIViewController {
             let entities = grouped.map { key, txs in
                 Entity(value: txs.map(\.amount).reduce(0, +), label: key)
             }
-            self.pieChartView.entities = entities
+            self.pieChartView.setEntities(entities, animated: true)
         }
 
         viewModel.onTotalAmountChange = { [weak self] _ in

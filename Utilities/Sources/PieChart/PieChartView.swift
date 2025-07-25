@@ -7,6 +7,113 @@ public final class PieChartView: UIView {
         }
     }
     
+    // MARK: — Анимация перехода
+    public func setEntities(_ newEntities: [Entity], animated: Bool) {
+        guard animated, bounds.width > 0 else {
+            entities = newEntities
+            return
+        }
+        
+        // Сохраняем текущие данные для снимка
+        let oldEntities = self.entities
+        
+        // 1) Создаём снимки
+        guard let oldImg = snapshot(with: oldEntities)?.cgImage,
+              let newImg = snapshot(with: newEntities)?.cgImage
+        else {
+            entities = newEntities
+            return
+        }
+        
+        // 2) Очищаем основной вид
+        self.entities = []
+        setNeedsDisplay()
+        
+        // 3) Создаём слои
+        let container = CALayer()
+        container.frame = bounds
+        
+        let oldLayer = CALayer()
+        oldLayer.frame = bounds
+        oldLayer.contents = oldImg
+        oldLayer.anchorPoint = CGPoint(x: 0.5, y: 0.5) // Центр вращения
+        oldLayer.position = CGPoint(x: bounds.midX, y: bounds.midY)
+        
+        let newLayer = CALayer()
+        newLayer.frame = bounds
+        newLayer.contents = newImg
+        newLayer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+        newLayer.position = CGPoint(x: bounds.midX, y: bounds.midY)
+        newLayer.opacity = 0
+        
+        // Порядок добавления: новый слой ПОД старым
+        container.addSublayer(newLayer)
+        container.addSublayer(oldLayer)
+        layer.addSublayer(container)
+        
+        // 4) Настройки анимации
+        let totalDur = CFTimeInterval(1.0)
+        
+        // Вращение контейнера (оба слоя вращаются вместе)
+        let rotation = CABasicAnimation(keyPath: "transform.rotation.z")
+        rotation.fromValue = 0
+        rotation.toValue = CGFloat.pi * 2
+        rotation.duration = totalDur
+        rotation.timingFunction = CAMediaTimingFunction(name: .linear)
+        rotation.isRemovedOnCompletion = false
+        
+        // Fade-out старого слоя (0 → 0.5 секунды)
+        let fadeOut = CABasicAnimation(keyPath: "opacity")
+        fadeOut.fromValue = 1
+        fadeOut.toValue = 0
+        fadeOut.beginTime = 0
+        fadeOut.duration = totalDur / 2
+        fadeOut.fillMode = .forwards
+        fadeOut.isRemovedOnCompletion = false
+        
+        // Fade-in нового слоя (0.5 → 1 секунды)
+        let fadeIn = CABasicAnimation(keyPath: "opacity")
+        fadeIn.fromValue = 0
+        fadeIn.toValue = 1
+        fadeIn.beginTime = totalDur / 2
+        fadeIn.duration = totalDur / 2
+        fadeIn.fillMode = .forwards
+        fadeIn.isRemovedOnCompletion = false
+        
+        // 5) Группа анимаций для нового слоя
+        let newGroup = CAAnimationGroup()
+        newGroup.animations = [fadeIn]
+        newGroup.duration = totalDur
+        
+        // 6) Запускаем анимации
+        CATransaction.begin()
+        CATransaction.setCompletionBlock {
+            container.removeFromSuperlayer()
+            self.entities = newEntities
+        }
+        
+        oldLayer.add(fadeOut, forKey: "fadeOut")
+        newLayer.add(newGroup, forKey: "fadeIn")
+        container.add(rotation, forKey: "rotation")
+        
+        CATransaction.commit()
+    }
+    
+    // MARK: — Утилиты для снимков
+    private func snapshot(with entities: [Entity]) -> UIImage? {
+        // временно нарисуем этот массив
+        let backup = self.entities
+        self.entities = entities
+        UIGraphicsBeginImageContextWithOptions(bounds.size, false, 0)
+        defer {
+            UIGraphicsEndImageContext()
+            self.entities = backup
+        }
+        // напрямую вызываем draw(_:), чтобы отрисовать новый график в контексте
+        draw(bounds)
+        return UIGraphicsGetImageFromCurrentImageContext()
+    }
+    
     private let ringThicknessRatio: CGFloat = 0.2
     
     public override init(frame: CGRect) {
