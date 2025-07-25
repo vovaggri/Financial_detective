@@ -77,7 +77,7 @@ struct AccountView: View {
                             // Сам график
                             BalanceHistoryChartView(
                                 currentBalance: Decimal(string: account.balance) ?? 0,
-                                transactions: vm.txHistory
+                                transactions: vm.txHistory, currencySymbol: vm.account?.currency ?? "₽"
                             )
                             .onAppear { Task { await vm.loadHistory() } }
                             .padding(.horizontal, 5)
