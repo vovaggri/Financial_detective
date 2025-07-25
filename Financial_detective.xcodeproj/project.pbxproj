@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		117EB7662E32F5BD00FA85C8 /* PieChart in Frameworks */ = {isa = PBXBuildFile; productRef = 117EB7652E32F5BD00FA85C8 /* PieChart */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		1101D44B2DFC6FEE005B3996 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -46,17 +50,26 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				117EB7662E32F5BD00FA85C8 /* PieChart in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		117EB7642E32F5BD00FA85C8 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		11EAD6BA2DF9F13F00D48534 = {
 			isa = PBXGroup;
 			children = (
 				11EAD6C52DF9F14000D48534 /* Financial_detective */,
 				1101D4482DFC6FEE005B3996 /* Financial_detectiveUnitTests */,
+				117EB7642E32F5BD00FA85C8 /* Frameworks */,
 				11EAD6C42DF9F14000D48534 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -113,6 +126,7 @@
 			);
 			name = Financial_detective;
 			packageProductDependencies = (
+				117EB7652E32F5BD00FA85C8 /* PieChart */,
 			);
 			productName = Financial_detective;
 			productReference = 11EAD6C32DF9F14000D48534 /* Financial_detective.app */;
@@ -146,6 +160,9 @@
 			);
 			mainGroup = 11EAD6BA2DF9F13F00D48534;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				117EB6962E32F3CF00FA85C8 /* XCLocalSwiftPackageReference "Utilities" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 11EAD6C42DF9F14000D48534 /* Products */;
 			projectDirPath = "";
@@ -448,6 +465,21 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		117EB6962E32F3CF00FA85C8 /* XCLocalSwiftPackageReference "Utilities" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Utilities;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		117EB7652E32F5BD00FA85C8 /* PieChart */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 117EB6962E32F3CF00FA85C8 /* XCLocalSwiftPackageReference "Utilities" */;
+			productName = PieChart;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 11EAD6BB2DF9F13F00D48534 /* Project object */;
 }

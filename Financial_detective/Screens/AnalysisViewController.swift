@@ -1,4 +1,5 @@
 import UIKit
+import PieChart
 
 final class AnalysisViewController: UIViewController {
 
@@ -25,6 +26,7 @@ final class AnalysisViewController: UIViewController {
     // MARK: — VM
 
     let viewModel: AnalysisViewModel
+    let pieChartView = PieChartView()
     public let client: NetworkClient
 
     // MARK: — Init
@@ -48,6 +50,7 @@ final class AnalysisViewController: UIViewController {
         sortControl.addTarget(self, action: #selector(didChangeSorting(_:)), for: .valueChanged)
         configureSumLabel()
         setupHeader()
+        configurePieChartView()
         view.addSubview(transactionsLabel)
         configureTransactionsLabel()
         setupTableView()
@@ -149,7 +152,16 @@ final class AnalysisViewController: UIViewController {
         view.translatesAutoresizingMaskIntoConstraints = false
         return row
     }
-
+    
+    private func configurePieChartView() {
+        view.addSubview(pieChartView)
+        pieChartView.translatesAutoresizingMaskIntoConstraints = false
+        pieChartView.pinTop(to: headerContainer.bottomAnchor, 16)
+        pieChartView.pinLeft(to: view, 20)
+        pieChartView.pinRight(to: view, 20)
+        pieChartView.setHeight(200)
+    }
+    
     private func configurePickers() {
         let green = UIColor(hex: "D4FAE6")
         
@@ -235,7 +247,7 @@ final class AnalysisViewController: UIViewController {
         transactionsLabel.font = .systemFont(ofSize: 13)
         transactionsLabel.textColor = .secondaryLabel
         
-        transactionsLabel.pinTop(to: headerContainer.bottomAnchor, 16)
+        transactionsLabel.pinTop(to: pieChartView.bottomAnchor, 16)
         transactionsLabel.pinLeft(to: headerContainer.leadingAnchor)
     }
 
@@ -283,15 +295,22 @@ final class AnalysisViewController: UIViewController {
     // MARK: — Bind VM
 
     private func bindViewModel() {
-        viewModel.onTransactionChange = { [weak self] _ in
-            self?.tableView.reloadData()
+        viewModel.onTransactionChange = { [weak self] txs in
+            guard let self = self else { return }
+            // 1) обновляем таблицу
+            self.tableView.reloadData()
+            
+            // 2) группируем по категории и обновляем PieChart
+            let grouped = Dictionary(grouping: txs, by: { $0.category.name })
+            let entities = grouped.map { key, txs in
+                Entity(value: txs.map(\.amount).reduce(0, +), label: key)
+            }
+            self.pieChartView.entities = entities
         }
-        
+
         viewModel.onTotalAmountChange = { [weak self] _ in
-            // вместо ‥.formatted(…) используем ваше ручное
             self?.configureSumLabel()
         }
-        
         viewModel.onError = { print("Ошибка:", $0) }
         viewModel.loadTransactions()
     }
