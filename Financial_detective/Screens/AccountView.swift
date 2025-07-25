@@ -72,6 +72,21 @@ struct AccountView: View {
                             : Color(red: 212/255, green: 250/255, blue: 230/255)
                         )
                         .listRowSeparator(.hidden)
+                        // **График баланса**
+                        if !vm.isEditing {
+                            // Сам график
+                            BalanceHistoryChartView(
+                                currentBalance: Decimal(string: account.balance) ?? 0,
+                                transactions: vm.txHistory
+                            )
+                            .onAppear { Task { await vm.loadHistory() } }
+                            .padding(.horizontal, 5)
+                            .listRowInsets(EdgeInsets())
+                            // Убираем встроенные разделители у Form
+                            .listRowSeparator(.hidden)
+                            // Задаём фон «ячейки» (или .clear)
+                            .listRowBackground(Color(.systemGray6))
+                        }
                     } else {
                         ProgressView()
                     }
