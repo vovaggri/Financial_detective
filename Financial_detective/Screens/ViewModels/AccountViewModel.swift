@@ -1,29 +1,43 @@
 import SwiftUI
 
 final class AccountViewModel: ObservableObject {
+    enum ChartPeriod: String, CaseIterable, Identifiable {
+        case days   = "Дни"
+        case months = "Месяцы"
+        var id: Self { self }
+    }
+    
     @Published var account: BankAccount?
     @Published var isEditing = false
     @Published var showCurrencyPicker = false
     @Published var isBalanceHidden = false
+    @Published var txHistory: [Transaction] = []
+    @Published var chartPeriod: ChartPeriod = .days
     
+    // MARK: — сервисы
+    let accountsService: BankAccountsService
+    let transactionsService: TransactionsService
     // Список доступных валют (можно вынести в сервис)
     let currencies = ["RUB", "USD", "EUR"]
     
-    private let service: BankAccountsService
-    
     init() {
+        // создаём один NetworkClient и один TransactionsFileCache
         let client = try! NetworkClient(token: Bundle.main.apiToken)
-        self.service = BankAccountsService(client: client)
+        let cache  = try! TransactionsFileCache()
+        
+        self.accountsService     = BankAccountsService(client: client)
+        self.transactionsService = TransactionsService(client: client, cache: cache)
         
         Task {
             await loadAccount()
+            await loadHistory()
         }
     }
     
     @MainActor
     func loadAccount() async {
         do {
-            account = try await service.fetchAccount()
+            account = try await accountsService.fetchAccount()
         } catch {
             print("Error loading: ", error)
         }
@@ -38,7 +52,7 @@ final class AccountViewModel: ObservableObject {
     func saveChanges(newBalance: String) async {
         guard let acc = account else { return }
         do {
-            account = try await service.updateAccount(
+            account = try await accountsService.updateAccount(
                 id: acc.id,
                 name: acc.name,   
                 balance: newBalance,

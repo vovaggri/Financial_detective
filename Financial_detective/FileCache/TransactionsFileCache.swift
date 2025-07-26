@@ -7,11 +7,14 @@ enum TransactionsFileCacheError: Error {
 
 final class TransactionsFileCache {
     private let fileURL: URL
+    private let lockQueue = DispatchQueue(label: "ru.yourapp.transactionsCache")
     private var transactions: [Transaction] = []
     
     /// Текущий набор транзакций
     var allTransactions: [Transaction] {
-        transactions
+        lockQueue.sync {
+            Array(transactions)
+        }
     }
     
     /// Конструирует cache на файл transactions.json в documents
@@ -26,45 +29,58 @@ final class TransactionsFileCache {
     /// Загружает из диска, декодируя JSON в [Transaction]
     func load() throws {
         let fm = FileManager.default
-        guard fm.fileExists(atPath: fileURL.path) else {
-            // если файла нет — считаем, что кеш пуст
-            transactions = []
-            return
+        let decoded: [Transaction]
+        if fm.fileExists(atPath: fileURL.path) {
+            let data = try Data(contentsOf: fileURL)
+            decoded = try JSONDecoder().decode([Transaction].self, from: data)
+        } else {
+            decoded = []
         }
-        let data = try Data(contentsOf: fileURL)
-        let decoded = try JSONDecoder().decode([Transaction].self, from: data)
         
-        // Убираем дубликаты по id
+        // убираем дубликаты
         var unique = [Int: Transaction]()
         for tx in decoded {
             unique[tx.id] = tx
         }
-        transactions = Array(unique.values)
+        let deduped = Array(unique.values)
+        
+        // записываем в кеш
+        lockQueue.sync {
+            transactions = deduped
+        }
     }
     
     /// Сохраняет текущий массив в файл, кодируя через JSONEncoder
     func save() throws {
-        let data = try JSONEncoder().encode(transactions)
-        try data.write(to: fileURL, options: Data.WritingOptions.atomic)
+        // Забираем снимок и кодируем его внутри lockQueue
+        let data = try lockQueue.sync { () -> Data in
+            try JSONEncoder().encode(transactions)
+        }
+        try data.write(to: fileURL, options: .atomic)
     }
     
     /// Добавляет транзакцию, если её ещё нет
     func add(_ transaction: Transaction) {
-        guard !transactions.contains(where: { $0.id == transaction.id }) else {
-            return
+        lockQueue.sync {
+            guard !transactions.contains(where: { $0.id == transaction.id }) else { return }
+            transactions.append(transaction)
         }
-        transactions.append(transaction)
     }
     
     /// Удаляет по id
     func remove(id: Int) {
-        transactions.removeAll { $0.id == id }
+        lockQueue.sync {
+            transactions.removeAll { $0.id == id }
+        }
     }
     
     /// Полностью очищает кеш и перезаписывает пустой массив
     func reset() throws {
-        transactions.removeAll()
-        try save()
+        try lockQueue.sync {
+            transactions.removeAll()
+            let data = try JSONEncoder().encode(transactions)
+            try data.write(to: fileURL, options: .atomic)
+        }
     }
 }
 
