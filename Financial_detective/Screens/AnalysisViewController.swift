@@ -15,7 +15,7 @@ final class AnalysisViewController: UIViewController {
     private let tableContainerView = UIView()
     
     private let sortControl: UISegmentedControl = {
-        let sc = UISegmentedControl(items: ["Дата", "Сумма"])
+        let sc = UISegmentedControl(items: [String(localized: "Дата"), String(localized: "Сумма")])
         sc.selectedSegmentIndex = 0
         sc.translatesAutoresizingMaskIntoConstraints = false
         return sc
@@ -77,10 +77,10 @@ final class AnalysisViewController: UIViewController {
         headerContainer.translatesAutoresizingMaskIntoConstraints = false
 
         // строки
-        let row1 = labeledRow(title: "Период: начало", view: startPicker)
-        let row2 = labeledRow(title: "Период: конец", view: endPicker)
-        let row3 = labeledRow(title: "Сортировка", view: sortControl)
-        let row4 = labeledRow(title: "Сумма", view: sumLabel)
+        let row1 = labeledRow(title: String(localized: "Период: начало"), view: startPicker)
+        let row2 = labeledRow(title: String(localized: "Период: конец"), view: endPicker)
+        let row3 = labeledRow(title: String(localized: "Сортировка"), view: sortControl)
+        let row4 = labeledRow(title: String(localized: "Сумма"), view: sumLabel)
 
         // сепаратор
         func sep() -> UIView {
@@ -243,7 +243,7 @@ final class AnalysisViewController: UIViewController {
     }
     
     private func configureTransactionsLabel() {
-        transactionsLabel.text = "ОПЕРАЦИИ"
+        transactionsLabel.text = String(localized: "ОПЕРАЦИИ")
         transactionsLabel.font = .systemFont(ofSize: 13)
         transactionsLabel.textColor = .secondaryLabel
         
