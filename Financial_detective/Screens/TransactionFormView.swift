@@ -126,22 +126,15 @@ struct TransactionFormView: View {
                             Task {
                                 do {
                                     try await viewModel.delete()
-                                    // сбросим прошлые ошибки
-                                    dismiss()
+                                    dismiss() // только при успехе
                                 } catch TransactionServiceError.notFound(let id) {
                                     viewModel.errorMessage = "Операция с id \(id) не найдена"
-                                    showErrorAlert = true
                                 } catch {
                                     viewModel.errorMessage = "Ошибка при удалении: \(error.localizedDescription)"
-                                    dismiss()
                                 }
                             }
                         } label: {
-                            Text(
-                                viewModel.direction == .outcome
-                                ? "Удалить расход"
-                                : "Удалить доход"
-                            )
+                            Text(viewModel.direction == .outcome ? "Удалить расход" : "Удалить доход")
                         }
                     }
                 }
@@ -163,16 +156,13 @@ struct TransactionFormView: View {
                     Button("Сохранить") {
                         if viewModel.canSave {
                             Task {
-                                try? await viewModel.save()
-                                dismiss()
+                                do { try await viewModel.save(); dismiss() }
+                                catch { viewModel.errorMessage = error.localizedDescription }
                             }
-                        } else {
-                            showValidationAlert = true
-                        }
+                        } else { showValidationAlert = true }
                     }
-                    .foregroundStyle(Color(red: 0x6F/255,
-                                                 green: 0x5D/255,
-                                                 blue: 0xB7/255))
+                    .foregroundStyle(Color(red: 0x6F/255, green: 0x5D/255, blue: 0xB7/255))
+                    .disabled(!viewModel.canSave || viewModel.isSaving)
                 }
             }
             .alert("Неполная форма", isPresented: $showValidationAlert) {

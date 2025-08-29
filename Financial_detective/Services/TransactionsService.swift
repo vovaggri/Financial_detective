@@ -66,16 +66,24 @@ final class TransactionsService {
         comment: comment
       )
 
-      let created: Transaction = try await client.request(
-        path: API.createTransaction.path,
-        method: API.createTransaction.method,
-        body: body
-      )
-      cache.add(created)
-      try cache.save()
-      return created
+      do {
+        let created: Transaction = try await client.request(
+          path: API.createTransaction.path,
+          method: API.createTransaction.method,
+          body: body
+        )
+        cache.add(created)
+        try cache.save()
+        return created
+      } catch NetworkError.decodingError(let underlying) {
+        // Считаем, что сервер создал запись; просто подтянем актуальный список.
+        let fresh = try await fetchTransactions(accountId: accountId)
+        if let last = fresh.max(by: { $0.id < $1.id }) {
+          return last
+        }
+        throw NetworkError.decodingError(underlying)
+      }
     }
-    
     
     func updateTransaction(_ tx: Transaction) async throws -> Transaction {
         let body = CreateTransactionRequest(
@@ -98,20 +106,8 @@ final class TransactionsService {
     }
 
     func deleteTransaction(id: Int) async throws {
-        do {
-            let path = "/api/v1/transactions/\(id)?id=\(id)"
-            let _: Transaction = try await client.request(
-                path: path,
-                method: API.deleteTransaction(id: id).method,
-                body: Optional<EmptyBody>.none as EmptyBody?
-            )
-        } catch let NetworkError.httpError(status, _) where status == 404 {
-            throw TransactionServiceError.notFound(id: id)
-        } catch {
-            throw error
-        }
-        cache.remove(id: id)
-        try cache.save()
+        try await client.requestVoid(path: API.deleteTransaction(id: id).path,
+                                     method: API.deleteTransaction(id: id).method)
     }
     
     func fetchTransactionsPeriod(

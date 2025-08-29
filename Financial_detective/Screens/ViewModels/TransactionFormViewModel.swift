@@ -21,6 +21,7 @@ final class TransactionFormViewModel: ObservableObject {
     @Published var amountString: String = ""
     @Published var date: Date = Date()
     @Published var comment: String = ""
+    @Published var isSaving = false
 
     init(
         transaction: Transaction?,
@@ -37,7 +38,7 @@ final class TransactionFormViewModel: ObservableObject {
         self.transactionsService = transactionsService
         self.categoriesService = categoriesService
         self.bankAccountsService = bankAccountsService
-
+        
         if let tx = transaction {
             selectedCategoryId = tx.category.id
             amountString = tx.amount.description
@@ -48,12 +49,12 @@ final class TransactionFormViewModel: ObservableObject {
             date = Date()
         }
     }
-
+    
     /// Текущая категория
     var currentCategory: Category? {
         categories.first(where: { $0.id == selectedCategoryId })
     }
-
+    
     /// Можно ли сохранить?
     var canSave: Bool {
         guard
@@ -63,7 +64,7 @@ final class TransactionFormViewModel: ObservableObject {
         else { return false }
         return true
     }
-
+    
     /// Загрузка категорий (и счёта при создании)
     func loadData() async {
         do {
@@ -78,16 +79,20 @@ final class TransactionFormViewModel: ObservableObject {
             print("Ошибка загрузки данных: \(error)")
         }
     }
-
+    
     /// Сохранение (создание или обновление)
     /// Сохранение (создание или обновление)
-    func save() async {
+    func save() async throws {
+        if isSaving { return }
+        isSaving = true
+        defer { isSaving = false }
+        
         guard
             let account = account,
             let category = categories.first(where: { $0.id == selectedCategoryId }),
             let amount = Decimal(string: amountString.replacingOccurrences(of: ",", with: "."))
-        else { return }
-
+        else { throw NSError(domain: "Form", code: 0, userInfo: [NSLocalizedDescriptionKey: "Заполните форму"]) }
+        
         let tx = Transaction(
             id: existingTransaction?.id ?? 0,
             account: account,
@@ -98,12 +103,12 @@ final class TransactionFormViewModel: ObservableObject {
             createdAt: existingTransaction?.createdAt ?? Date(),
             updatedAt: Date()
         )
-
+        
         do {
             if isEditing {
-                _ = try await transactionsService.updateTransaction(tx)
+                try await transactionsService.updateTransaction(tx)
             } else {
-                _ = try await transactionsService.createTransaction(
+                try await transactionsService.createTransaction(
                     accountId: tx.account.id,
                     categoryId: tx.category.id,
                     amount: tx.amount,
@@ -111,40 +116,21 @@ final class TransactionFormViewModel: ObservableObject {
                     comment: tx.comment
                 )
             }
-        } catch let NetworkError.httpError(statusCode, data) {
-            // 🎯 Здесь у тебя есть statusCode и тело ответа
-            print("❌ Ошибка HTTP: \(statusCode)")
-
-            // Например:
+        } catch let NetworkError.httpError(statusCode, _) {
+            // осмысленные тексты + проброс
             switch statusCode {
-            case 400:
-                // Некорректные данные
-                await MainActor.run {
-                    // Обнови @Published состояние ошибки
-                    self.errorMessage = "Некорректные данные, проверьте ввод"
-                }
-            case 401:
-                await MainActor.run {
-                    self.errorMessage = "Неавторизован — проверь токен"
-                }
-            case 404:
-                await MainActor.run {
-                    self.errorMessage = "Счет или категория не найдены"
-                }
-            default:
-                await MainActor.run {
-                    self.errorMessage = "Неизвестная ошибка (\(statusCode))"
-                }
+            case 400: errorMessage = "Некорректные данные, проверьте ввод"
+            case 401: errorMessage = "Неавторизован — проверь токен"
+            case 404: errorMessage = "Счёт или категория не найдены"
+            default:  errorMessage = "Неизвестная ошибка (\(statusCode))"
             }
+            throw NetworkError.httpError(statusCode: statusCode, data: Data())
         } catch {
-            // Любая другая ошибка (например, сеть)
-            await MainActor.run {
-                self.errorMessage = "Сетевая ошибка: \(error.localizedDescription)"
-            }
+            errorMessage = "Сетевая/клиентская ошибка: \(error.localizedDescription)"
+            throw error
         }
     }
-
-
+    
     /// Удаление операции
     func delete() async throws {
         guard let id = existingTransaction?.id else { return }
