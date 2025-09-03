@@ -7,15 +7,6 @@
 
 import SwiftUI
 
-//@main
-//struct Financial_detectiveApp: App {
-//    var body: some Scene {
-//        WindowGroup {
-//            ServicesTestView()
-//        }
-//    }
-//}
-
 @main
 struct Financial_detectiveApp: App {
     @StateObject private var transactionsServiceHolder = TransactionsServiceHolder(token: Bundle.main.apiToken)

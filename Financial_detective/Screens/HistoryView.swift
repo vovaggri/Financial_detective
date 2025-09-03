@@ -3,6 +3,7 @@ import SwiftUI
 struct HistoryView: View {
     @StateObject var vm: HistoryViewModel
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var store: TransactionsServiceHolder
     
     @State private var showForm = false
     @State private var editingTx: Transaction?
@@ -80,8 +81,8 @@ struct HistoryView: View {
                 direction: vm.direction,
                 accountId: vm.accountId,
                 transactionsService: vm.service,
-                categoriesService: CategoriesService(client: vm.client),
-                bankAccountsService: BankAccountsService(client: vm.client)
+                categoriesService: store.categoriesService,
+                bankAccountsService: store.bankAccountsService
             )
             .interactiveDismissDisabled()
         }

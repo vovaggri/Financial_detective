@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct TransactionsListView: View {
+    @EnvironmentObject var store: TransactionsServiceHolder
     @StateObject var vm: TransactionsListViewModel
-    
     @State private var showForm = false
     @State private var editingTx: Transaction?
-
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
@@ -69,8 +69,8 @@ struct TransactionsListView: View {
                     direction: vm.direction,
                     accountId: vm.accountId,
                     transactionsService: vm.service,
-                    categoriesService: CategoriesService(client: vm.client),
-                    bankAccountsService: BankAccountsService(client: vm.client)
+                    categoriesService: store.categoriesService,
+                    bankAccountsService: store.bankAccountsService
                 )
                 .interactiveDismissDisabled()
             }
@@ -81,8 +81,8 @@ struct TransactionsListView: View {
                     direction: vm.direction,
                     accountId: vm.accountId,
                     transactionsService: vm.service,
-                    categoriesService: CategoriesService(client: vm.client),
-                    bankAccountsService: BankAccountsService(client: vm.client)
+                    categoriesService: store.categoriesService,
+                    bankAccountsService: store.bankAccountsService
                 )
                 .interactiveDismissDisabled()
             }

@@ -16,3 +16,5 @@ extension BankAccountsService {
     }
 }
 
+struct EmptyBody: Encodable {}
+

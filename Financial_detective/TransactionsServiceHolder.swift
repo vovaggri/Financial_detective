@@ -3,25 +3,23 @@ import Combine
 
 final class TransactionsServiceHolder: ObservableObject {
     let service: TransactionsService
+    let client: NetworkClient
+    let categoriesService: CategoriesService
+    let bankAccountsService: BankAccountsService
     let accountId: Int
 
-    init(
-        accountId: Int = 83,
-        token: String
-    ) {
+    init(accountId: Int = 83, token: String) {
         self.accountId = accountId
-
         do {
-            // 1) Создаём клиент с реальным Bearer‑token
             let client = try NetworkClient(token: token)
+            self.client = client
 
-            // 2) Открываем или создаём кеш-файл
-            let cache = try TransactionsFileCache()
-
-            // 3) Сразу инициализируем сервис с client + cache
+            let cache  = try TransactionsFileCache()
             self.service = TransactionsService(client: client, cache: cache)
+
+            self.categoriesService   = CategoriesService(client: client)
+            self.bankAccountsService = BankAccountsService(client: client, accountId: accountId)
         } catch {
-            // если что-то пошло не так — сразу понятный crash
             fatalError("TransactionsServiceHolder init failed: \(error)")
         }
     }

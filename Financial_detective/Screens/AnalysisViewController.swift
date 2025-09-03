@@ -22,6 +22,13 @@ final class AnalysisViewController: UIViewController {
     }()
     
     private var tableViewHeightConstraint: NSLayoutConstraint!
+    
+    // MARK: - DI
+    
+    private let transactionsService: TransactionsService
+    private let categoriesService: CategoriesService
+    private let bankAccountsService: BankAccountsService
+    private let accountId: Int
 
     // MARK: — VM
 
@@ -31,14 +38,26 @@ final class AnalysisViewController: UIViewController {
 
     // MARK: — Init
 
-    init(viewModel: AnalysisViewModel, client: NetworkClient) {
+    init(
+        viewModel: AnalysisViewModel,
+        client: NetworkClient,
+        transactionsService: TransactionsService,
+        categoriesService: CategoriesService,
+        bankAccountsService: BankAccountsService,
+        accountId: Int
+    ) {
         self.viewModel = viewModel
         self.client = client
+        self.transactionsService = transactionsService
+        self.categoriesService = categoriesService
+        self.bankAccountsService = bankAccountsService
+        self.accountId = accountId
         super.init(nibName: nil, bundle: nil)
     }
+    
     @available(*, unavailable)
-    required init?(coder: NSCoder) { fatalError() }
-
+    required init?(coder: NSCoder) { nil }
+    
     // MARK: — Lifecycle
 
     override func viewDidLoad() {

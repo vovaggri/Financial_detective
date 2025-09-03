@@ -136,9 +136,8 @@ final class TransactionFormViewModel: ObservableObject {
         guard let id = existingTransaction?.id else { return }
         do {
             try await transactionsService.deleteTransaction(id: id)
-        } catch TransactionServiceError.notFound(let id) {
-            throw TransactionServiceError.notFound(id: id)
         } catch {
+            // здесь можно показать alert при офлайне, если нужно
             throw error
         }
     }

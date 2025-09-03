@@ -31,3 +31,10 @@ struct CreateTransactionRequest: Encodable {
     }
 }
 
+// временные id для оффлайна (отрицательные)
+@inline(__always)
+func makeTempTransactionId() -> Int {
+    let ms = Int(Date().timeIntervalSince1970 * 1000)
+    return -ms - Int.random(in: 1...999)
+}
+
